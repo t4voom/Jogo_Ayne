@@ -4,6 +4,7 @@ import { defaultPosition } from '../../catalog/placement';
 import type { CatalogItem } from '../../catalog/types';
 import type { PlacedItem, Room, RoomId } from '../../core/model';
 import { clamp, findItem } from '../../core/rules';
+import { createLogger } from '../../core/log';
 import { roomInfo } from '../../core/rooms';
 import { poof, sparkleBurst } from '../../fx/sparkles';
 import { StageGestures } from '../../input/stage-gestures';
@@ -21,6 +22,8 @@ import { createSyncIndicator } from '../sync-indicator';
 import '../styles/progression.css';
 import '../styles/album.css';
 import '../styles/room.css';
+
+const photoLog = createLogger('foto');
 
 export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promise<Screen> {
   const info = roomInfo(roomId);
@@ -287,7 +290,7 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
       });
     } catch (error) {
       ctx.toast.show('Não consegui tirar a foto agora 😢', { tone: 'warn' });
-      throw error;
+      photoLog.error('Falha ao tirar a foto', error);
     } finally {
       shooting = false;
     }

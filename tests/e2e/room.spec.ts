@@ -15,6 +15,7 @@ test.describe('cômodo', () => {
     await openRoom(page);
     await page.getByRole('button', { name: 'Adicionar Trono real' }).click({ force: true });
     const sel = '.stage-items .item[data-item-id="trono"]';
+    await page.waitForTimeout(700); // termina a animação de "pop"
     const start = await centerOf(page, sel);
     const styleBefore = await page.locator(sel).getAttribute('style');
     await touchGesture(page, [[start, { x: start.x - 60, y: start.y - 30 }]]);

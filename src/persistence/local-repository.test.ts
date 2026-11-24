@@ -96,4 +96,23 @@ describe('LocalRepository', () => {
     expect(left.filter((b) => b.key === 'quarto').map((b) => b.data)).toEqual([4, 3]);
     expect(left.filter((b) => b.key === 'trono')).toHaveLength(1);
   });
+  it('guarda a foto como bytes e devolve um Blob igual', async () => {
+    const { repo } = await open();
+    const bytes = new Uint8Array([137, 80, 78, 71, 1, 2, 3]);
+    await repo.savePhoto({
+      id: 'p1',
+      roomId: 'quarto',
+      createdAt: 5,
+      image: new Blob([bytes], { type: 'image/png' }),
+      thumbnail: 'data:image/jpeg;base64,AAAA',
+    });
+    await repo.savePhoto({ id: 'p2', roomId: 'sala', createdAt: 9, image: null, thumbnail: 't' });
+    const [newest, older] = await repo.listPhotos();
+    expect(newest?.id).toBe('p2');
+    expect(newest?.image).toBeNull();
+    const back = (await repo.getPhoto('p1'))?.image;
+    expect(back?.type).toBe('image/png');
+    expect(new Uint8Array(await back!.arrayBuffer())).toEqual(bytes);
+    expect(older?.id).toBe('p1');
+  });
 });

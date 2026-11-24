@@ -21,7 +21,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
       resolve(img);
     };
     img.onerror = () => {
-      reject(new Error('Não foi possível desenhar o cômodo na foto'));
+      reject(new Error(`Não foi possível carregar o desenho do cômodo (${src.slice(0, 30)}…)`));
     };
     img.src = src;
   });
@@ -70,8 +70,21 @@ export async function capturePhoto(
   getItem: (id: string) => CatalogItem | undefined,
   when: Date,
 ): Promise<CapturedPhoto> {
-  const svg = composeRoomSvg(room, art, getItem, { standalone: true, still: true });
-  const img = await loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
+  const svg = composeRoomSvg(room, art, getItem, { standalone: true, still: true })
+    // Tamanho explícito: o WebKit não usa só o viewBox para o tamanho da imagem.
+    .replace(
+      '<svg xmlns="http://www.w3.org/2000/svg"',
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${IMG}" height="${IMG}"`,
+    );
+  let img: HTMLImageElement;
+  let blobUrl: string | null = null;
+  try {
+    img = await loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
+  } catch {
+    // Alguns WebKits recusam data URLs grandes: tenta com Blob URL.
+    blobUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    img = await loadImage(blobUrl);
+  }
   try {
     await document.fonts.load('700 64px "Dancing Script"');
     await document.fonts.load('800 30px "Nunito"');
@@ -133,11 +146,16 @@ export async function capturePhoto(
   const date = when.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
   ctx.fillText(`${roomName} · ${date}`, W / 2, PAD + IMG + 150);
 
+  if (blobUrl) URL.revokeObjectURL(blobUrl);
   const image = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((b) => {
-      if (b) resolve(b);
-      else reject(new Error('Não foi possível gerar a foto'));
-    }, 'image/png');
+    try {
+      canvas.toBlob((b) => {
+        if (b) resolve(b);
+        else reject(new Error('O navegador não gerou o PNG da foto'));
+      }, 'image/png');
+    } catch (error) {
+      reject(new Error('O navegador bloqueou a exportação da foto', { cause: error }));
+    }
   });
 
   const thumb = document.createElement('canvas');

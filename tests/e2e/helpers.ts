@@ -18,7 +18,9 @@ export async function skipTutorial(page: Page): Promise<void> {
   const skip = page
     .getByRole('dialog', { name: 'Tutorial' })
     .getByRole('button', { name: 'Pular' });
-  await skip.click({ timeout: 4_000 });
+  await skip.waitFor({ state: 'visible', timeout: 8_000 });
+  // O cartão tem animações contínuas (fadinha); não precisamos esperar "parar".
+  await skip.click({ force: true });
   await expect(page.getByRole('dialog', { name: 'Tutorial' })).toHaveCount(0);
 }
 

@@ -35,13 +35,12 @@ import { Toaster } from './ui/toast';
 
 const log = createLogger('main');
 
-if (import.meta.env.DEV) {
-  logHub.addSink((e) => {
-    const fn =
-      e.level === 'error' ? console.error : e.level === 'warn' ? console.warn : console.info;
-    fn(`[${e.scope}] ${e.message}`, e.detail ?? '');
-  });
-}
+logHub.addSink((e) => {
+  // Em produção só erros vão para o console (diagnóstico pelo DevTools/CI).
+  if (!import.meta.env.DEV && e.level !== 'error') return;
+  const fn = e.level === 'error' ? console.error : e.level === 'warn' ? console.warn : console.info;
+  fn(`[${e.scope}] ${e.message}`, e.detail ?? '');
+});
 
 function hideBootScreen(): void {
   const boot = document.getElementById('boot');

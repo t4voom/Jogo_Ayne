@@ -51,6 +51,26 @@ export interface PhotoRecord {
   readonly thumbnail: string;
 }
 
+/**
+ * Como a foto fica no IndexedDB: bytes em ArrayBuffer em vez de Blob. O Safari
+ * em navegação privada (e outros WebKits efêmeros) recusa guardar Blob no
+ * IndexedDB; ArrayBuffer funciona em todo lugar.
+ */
+interface StoredPhoto extends Omit<PhotoRecord, 'image'> {
+  readonly image: { readonly bytes: ArrayBuffer; readonly type: string } | Blob | null;
+}
+
+async function toStoredPhoto(photo: PhotoRecord): Promise<StoredPhoto> {
+  if (!photo.image) return { ...photo, image: null };
+  return { ...photo, image: { bytes: await photo.image.arrayBuffer(), type: photo.image.type } };
+}
+
+function fromStoredPhoto(stored: StoredPhoto): PhotoRecord {
+  const { image } = stored;
+  if (image === null || image instanceof Blob) return { ...stored, image };
+  return { ...stored, image: new Blob([image.bytes], { type: image.type }) };
+}
+
 export interface LoadedRooms {
   readonly rooms: Room[];
   /** Cômodos que não puderam ser lidos (foram para a quarentena). */
@@ -184,16 +204,17 @@ export class LocalRepository {
   // ------------------------------------------------------------------ álbum
 
   async listPhotos(): Promise<PhotoRecord[]> {
-    const all = (await this.db.getAll(STORES.photos)) as PhotoRecord[];
-    return all.sort((a, b) => b.createdAt - a.createdAt);
+    const all = (await this.db.getAll(STORES.photos)) as StoredPhoto[];
+    return all.map(fromStoredPhoto).sort((a, b) => b.createdAt - a.createdAt);
   }
 
   async getPhoto(id: string): Promise<PhotoRecord | undefined> {
-    return (await this.db.get(STORES.photos, id)) as PhotoRecord | undefined;
+    const stored = (await this.db.get(STORES.photos, id)) as StoredPhoto | undefined;
+    return stored && fromStoredPhoto(stored);
   }
 
   async savePhoto(photo: PhotoRecord): Promise<void> {
-    await this.db.put(STORES.photos, photo);
+    await this.db.put(STORES.photos, await toStoredPhoto(photo));
   }
 
   async deletePhoto(id: string): Promise<void> {

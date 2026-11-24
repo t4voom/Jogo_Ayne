@@ -1,0 +1,152 @@
+/*
+ * Tokens de design — a única fonte de cores, tipografia, raios, sombras e
+ * movimento do jogo. Componentes NUNCA usam cor "solta": sempre um token.
+ */
+:root {
+  /* ---------- Paleta base ---------- */
+  --c-rose-50: #fff4f9;
+  --c-rose-100: #ffe6f1;
+  --c-rose-200: #ffcde2;
+  --c-rose-300: #f9b0d1;
+  --c-rose-400: #f391bf;
+  --c-rose-500: #e86ea8;
+  --c-rose-600: #c2407c; /* contraste AA com branco */
+  --c-rose-700: #9e2f63;
+
+  --c-lilac-50: #f8f3ff;
+  --c-lilac-100: #efe5ff;
+  --c-lilac-200: #e0cffb;
+  --c-lilac-300: #cbb1f4;
+  --c-lilac-400: #b193ea;
+  --c-lilac-500: #9471d8;
+  --c-lilac-600: #7652bd;
+
+  --c-sky-100: #e6f4ff;
+  --c-sky-200: #cde8fb;
+  --c-sky-300: #a7d5f4;
+  --c-sky-400: #7dbde8;
+  --c-sky-500: #4f9fd6;
+
+  --c-mint-100: #e3f8ee;
+  --c-mint-300: #a6e2c4;
+  --c-mint-500: #4fb98a;
+  --c-mint-600: #2f8f66;
+
+  --c-gold-100: #fff4d1;
+  --c-gold-200: #ffe5a3;
+  --c-gold-300: #f8d06d;
+  --c-gold-400: #ebb54a;
+  --c-gold-500: #d4982d;
+  --c-gold-600: #a8731b;
+
+  --c-pearl-50: #fffcf9;
+  --c-pearl-100: #fdf6f1;
+  --c-pearl-200: #f6ebe4;
+
+  --c-plum-900: #4a2341;
+  --c-plum-800: #5c2d52;
+  --c-plum-700: #74406a;
+  --c-plum-500: #9b6b8f;
+  --c-plum-300: #c9a6bf;
+
+  --c-coral-500: #e5596b;
+  --c-coral-600: #c23a4e;
+
+  /* ---------- Semânticos ---------- */
+  --color-bg: var(--c-rose-50);
+  --color-surface: var(--c-pearl-50);
+  --color-surface-soft: rgb(255 255 255 / 72%);
+  --color-surface-glass: rgb(255 250 253 / 82%);
+  --color-border: rgb(232 110 168 / 22%);
+  --color-text: var(--c-plum-900);
+  --color-text-soft: var(--c-plum-700);
+  --color-text-muted: var(--c-plum-500);
+  --color-text-on-primary: #fff;
+  --color-primary: var(--c-rose-500);
+  --color-primary-strong: var(--c-rose-600);
+  --color-primary-soft: var(--c-rose-100);
+  --color-secondary: var(--c-lilac-500);
+  --color-secondary-soft: var(--c-lilac-100);
+  --color-accent: var(--c-gold-400);
+  --color-accent-strong: var(--c-gold-600);
+  --color-success: var(--c-mint-600);
+  --color-danger: var(--c-coral-600);
+  --color-focus: var(--c-lilac-600);
+  --color-overlay: rgb(74 35 65 / 38%);
+
+  /* ---------- Tipografia ---------- */
+  --font-display: 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive;
+  --font-ui:
+    'Nunito', ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.75rem;
+  --fs-display: clamp(2.5rem, 7vw + 1rem, 4.5rem);
+  --fw-regular: 400;
+  --fw-bold: 700;
+  --fw-black: 800;
+
+  /* ---------- Espaçamento (escala de 4px) ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ---------- Forma ---------- */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+  --touch-min: 48px;
+
+  /* ---------- Sombras (rosadas, nunca cinza puro) ---------- */
+  --shadow-xs: 0 1px 2px rgb(158 47 99 / 12%);
+  --shadow-sm: 0 3px 8px rgb(158 47 99 / 14%);
+  --shadow-md: 0 8px 22px rgb(158 47 99 / 16%), 0 2px 6px rgb(158 47 99 / 10%);
+  --shadow-lg: 0 18px 44px rgb(118 82 189 / 20%), 0 6px 14px rgb(158 47 99 / 12%);
+  --shadow-inset: inset 0 2px 0 rgb(255 255 255 / 70%), inset 0 -3px 0 rgb(158 47 99 / 12%);
+  --glow-gold: 0 0 0 3px rgb(248 208 109 / 55%), 0 0 22px rgb(248 208 109 / 55%);
+
+  /* ---------- Movimento ---------- */
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-soft: cubic-bezier(0.55, 0, 0.75, 0.45);
+  --dur-fast: 140ms;
+  --dur: 240ms;
+  --dur-slow: 420ms;
+  --dur-screen: 520ms;
+
+  /* ---------- Safe areas (iPhone) ---------- */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* ---------- Camadas ---------- */
+  --z-stage: 1;
+  --z-hud: 10;
+  --z-drawer: 20;
+  --z-menu: 30;
+  --z-modal: 40;
+  --z-toast: 50;
+  --z-fx: 60;
+  --z-fatal: 100;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur: 0ms;
+    --dur-slow: 0ms;
+    --dur-screen: 0ms;
+  }
+}

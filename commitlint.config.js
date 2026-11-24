@@ -1,0 +1,35 @@
+/** Conventional Commits. Descrições em português são bem-vindas. */
+export default {
+  extends: ['@commitlint/config-conventional'],
+  rules: {
+    'subject-case': [0],
+    'body-max-line-length': [1, 'always', 100],
+    'footer-max-line-length': [1, 'always', 120],
+    'scope-enum': [
+      1,
+      'always',
+      [
+        'core',
+        'state',
+        'persistence',
+        'sync',
+        'render',
+        'input',
+        'ui',
+        'catalog',
+        'art',
+        'audio',
+        'fx',
+        'progression',
+        'content',
+        'pwa',
+        'apps-script',
+        'ci',
+        'deps',
+        'docs',
+        'e2e',
+        'release',
+      ],
+    ],
+  },
+};

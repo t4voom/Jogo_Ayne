@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>O Castelo da Aynebrenda</title>
+    <meta name="description" content="Decore o castelo da princesa Ayne, cômodo por cômodo." />
+    <meta name="theme-color" content="#f4a6c6" />
+    <meta name="color-scheme" content="light" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- PWA no iOS -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Castelo da Ayne" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
+    <link rel="icon" type="image/svg+xml" href="/icons/crown.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <!-- splash-screens -->
+
+    <style>
+      /* Tela de carregamento embutida: aparece antes do JS, sem flash branco. */
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #fff4f9;
+      }
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at 50% 40%, #fff 0, #ffe6f1 45%, #f3d9f7 100%);
+        transition: opacity 0.45s ease;
+      }
+      #boot img {
+        width: 112px;
+        height: 112px;
+        animation: boot-bob 1.6s ease-in-out infinite;
+      }
+      #boot.is-done {
+        opacity: 0;
+        pointer-events: none;
+      }
+      @keyframes boot-bob {
+        50% {
+          transform: translateY(-8px) scale(1.04);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #boot img {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="boot" aria-hidden="true"><img src="/icons/crown.svg" alt="" /></div>
+    <div id="app"></div>
+    <noscript>
+      <p style="font-family: sans-serif; text-align: center; padding: 2rem">
+        Para entrar no castelo, ative o JavaScript do navegador. 👑
+      </p>
+    </noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

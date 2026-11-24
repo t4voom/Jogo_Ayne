@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('abre o castelo e mostra o título', async ({ page }) => {
   await page.goto('./');
-  await expect(page.getByRole('heading', { name: 'O Castelo da Aynebrenda' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Aynebrenda/ })).toBeVisible();
   await expect(page).toHaveTitle('O Castelo da Aynebrenda');
 });
 

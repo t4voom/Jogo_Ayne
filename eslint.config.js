@@ -107,7 +107,7 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser } },
   },
   {
-    files: ['**/*.test.ts', 'tests/**/*.ts'],
+    files: ['**/*.test.ts', 'tests/**/*.ts', 'dev/**/*.ts'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/unbound-method': 'off',

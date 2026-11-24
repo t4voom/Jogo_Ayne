@@ -4,11 +4,27 @@ import '@fontsource/nunito/latin-800.css';
 import '@fontsource/dancing-script/latin-700.css';
 import './ui/styles/tokens.css';
 import './ui/styles/base.css';
+import './ui/styles/components.css';
 
+import { installSharedDefs } from './art/defs';
+import { ArtRegistry } from './art/registry';
+import { randomId } from './core/ids';
 import { createLogger, logHub } from './core/log';
+import type { Room, RoomId } from './core/model';
+import { createProfile } from './core/profile';
+import { createRoom, roomInfo } from './core/rooms';
+import { Autosaver } from './persistence/autosave';
+import { LocalRepository, requestPersistentStorage } from './persistence/local-repository';
+import { GameActions } from './state/actions';
+import { Store, type GameState } from './state/store';
+import type { GameContext } from './ui/context';
 import { showFatalError } from './ui/fatal-error';
 import { installGlobalErrorHandlers } from './ui/global-errors';
+import { Haptics } from './ui/haptics';
 import { setupPwa } from './ui/pwa';
+import { Router, type Route, type Screen } from './ui/router';
+import { createOpeningScreen } from './ui/screens/opening';
+import { Toaster } from './ui/toast';
 
 const log = createLogger('main');
 
@@ -29,24 +45,154 @@ function hideBootScreen(): void {
   }, 600);
 }
 
-function boot(): void {
-  installGlobalErrorHandlers();
+/** Abre o banco local; se o navegador não deixar, segue só em memória. */
+async function openRepository(toast: Toaster): Promise<LocalRepository | null> {
+  try {
+    return await LocalRepository.open();
+  } catch (error) {
+    log.error('IndexedDB indisponível; jogando sem salvar no aparelho', error);
+    toast.show(
+      'Não consegui salvar neste navegador 😢 Abra pelo Safari/Chrome normal (sem aba anônima).',
+      {
+        tone: 'warn',
+        duration: 0,
+      },
+    );
+    return null;
+  }
+}
+
+async function boot(): Promise<void> {
   const app = document.getElementById('app');
   if (!app) throw new Error('Elemento #app não encontrado');
 
-  const title = document.createElement('h1');
-  title.textContent = 'O Castelo da Aynebrenda';
-  title.style.cssText =
-    'font-family:var(--font-display);color:var(--color-primary-strong);font-size:var(--fs-display);text-align:center;margin-top:30vh';
-  app.append(title);
+  const toast = new Toaster();
+  installGlobalErrorHandlers(() => {
+    toast.show('Ops! Algo deu errado, mas seu castelo está salvo 💕', { tone: 'warn' });
+  });
+  installSharedDefs();
+
+  // iOS: impede o zoom da página com pinça fora do palco.
+  document.addEventListener('gesturestart', (e) => {
+    e.preventDefault();
+  });
+
+  // ------------------------------------------------------------ dados
+  const repo = await openRepository(toast);
+  const now = Date.now();
+  const loaded = repo ? await repo.loadRooms() : { rooms: [], quarantined: [] };
+  const profile = (repo ? await repo.loadProfile() : null) ?? createProfile(now);
+  if (loaded.quarantined.length > 0) {
+    toast.show('Recuperei seu castelo de um probleminha. Nada foi perdido 💕', { icon: 'restore' });
+  }
+  const rooms: Partial<Record<RoomId, Room>> = {};
+  for (const r of loaded.rooms) rooms[r.id] = r;
+  const initial: GameState = { rooms, profile, selection: null };
+
+  const store = new Store(initial);
+  const actions = new GameActions(store, randomId);
+  const haptics = new Haptics(() => store.getState().profile.settings.haptics);
+  const art = new ArtRegistry();
+
+  // ------------------------------------------ salvamento automático local
+  if (repo) {
+    const autosaver = new Autosaver(repo, {
+      onStatus: (status) => {
+        if (status === 'error') {
+          toast.show('Não consegui salvar no aparelho agora; vou tentar de novo.', {
+            tone: 'warn',
+          });
+        }
+      },
+    });
+    store.subscribe((event) => {
+      if (event.type === 'room' && event.source !== 'load') autosaver.room(event.next);
+      if (event.type === 'profile' && event.source !== 'load') autosaver.profile(event.next);
+    });
+    const flush = () => {
+      void autosaver.flush();
+    };
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flush();
+    });
+    window.addEventListener('pagehide', flush);
+    void requestPersistentStorage(log);
+  }
+
+  // ------------------------------------------------------------- telas
+  const ensureRoom = (roomId: RoomId): Room => {
+    const existing = store.getRoom(roomId);
+    if (existing) return existing;
+    const room = createRoom(roomId, randomId, Date.now());
+    store.replaceRoom(room, 'load');
+    return room;
+  };
+  const isRoomUnlocked = (roomId: RoomId) => roomInfo(roomId).starter;
+
+  let ctx: GameContext | null = null;
+  const loadScreen = async (route: Route): Promise<Screen> => {
+    if (!ctx) throw new Error('Contexto ainda não criado');
+    const c = ctx;
+    switch (route.name) {
+      case 'opening':
+        return createOpeningScreen(() => {
+          void c.router.go({ name: 'map' });
+        });
+      case 'room': {
+        const { createRoomScreen } = await import('./ui/screens/room');
+        return createRoomScreen(c, route.roomId);
+      }
+      case 'map':
+      case 'album':
+      case 'achievements':
+      case 'settings': {
+        const { createMapScreen } = await import('./ui/screens/map');
+        return createMapScreen(c);
+      }
+    }
+  };
+  const guard = (route: Route): Route =>
+    route.name === 'room' && !isRoomUnlocked(route.roomId) ? { name: 'map' } : route;
+  const router = new Router(app, loadScreen, guard);
+  ctx = {
+    store,
+    actions,
+    art,
+    toast,
+    haptics,
+    router,
+    newId: randomId,
+    ensureRoom,
+    isRoomUnlocked,
+  };
+
+  await router.start();
   hideBootScreen();
-  setupPwa();
+
+  setupPwa({
+    onUpdateReady: (update) => {
+      toast.show('Nova versão disponível — toque para atualizar', {
+        icon: 'sparkle',
+        tone: 'love',
+        duration: 0,
+        action: {
+          label: 'Atualizar',
+          run: () => {
+            void update();
+          },
+        },
+      });
+    },
+  });
+  // Pré-carrega a arte em segundo plano para a primeira abertura de cômodo ser instantânea.
+  window.setTimeout(() => {
+    void import('./ui/screens/room');
+    void art.loadMany(['moveis', 'decoracao', 'plantas', 'bichinhos', 'externos']);
+  }, 1500);
   log.info('Castelo pronto');
 }
 
-try {
-  boot();
-} catch (error) {
+boot().catch((error: unknown) => {
   log.error('Falha ao iniciar', error);
   showFatalError(error);
-}
+});

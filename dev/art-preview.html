@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Prévia da arte</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        background: #fff4f9;
+        font-family: sans-serif;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 150px);
+        gap: 10px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 8px;
+        box-shadow: 0 2px 8px #e8b2cb55;
+      }
+      .card svg {
+        width: 134px;
+        height: 134px;
+        display: block;
+      }
+      .card p {
+        margin: 4px 0 0;
+        font-size: 11px;
+        text-align: center;
+        color: #74406a;
+      }
+      .rooms {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 300px);
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .rooms svg {
+        width: 300px;
+        height: 300px;
+        border-radius: 12px;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="items" class="grid"></div>
+    <div id="rooms" class="rooms"></div>
+    <script type="module" src="./art-preview.ts"></script>
+  </body>
+</html>

@@ -177,7 +177,7 @@ describe('SyncEngine', () => {
     a.edit('trono', 1);
     await settle();
     await b.engine.pull();
-    expect(b.rooms.get('trono')?.items).toHaveLength(2);
+    expect(b.rooms.get('trono')?.items).toHaveLength(a.rooms.get('trono')!.items.length);
     expect(b.applied).toContainEqual({ kind: 'room', id: 'trono', reason: 'newer' });
   });
 

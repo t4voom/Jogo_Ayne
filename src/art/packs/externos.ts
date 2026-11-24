@@ -1,6 +1,7 @@
 import { circle, ellipse, fs, g, gem, path, shadow, shine, sparkle, st } from '../kit';
 import { FIXED } from '../palette';
 import type { ArtPack } from '../types';
+import extra from './externos-extra';
 
 const S = FIXED.stone;
 const W = FIXED.water;
@@ -57,4 +58,4 @@ const fonte = {
     sparkle(170, 200, 5),
 } satisfies ArtPack[string];
 
-export default { fonte } satisfies ArtPack;
+export default { ...extra, fonte } satisfies ArtPack;

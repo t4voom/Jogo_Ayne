@@ -59,7 +59,11 @@ export const ROOMS: readonly RoomInfo[] = [
       floorColor: 'perola',
       floorPattern: 'marmore',
     },
-    starterItems: [],
+    starterItems: [
+      { ...base, itemId: 'vitral', x: 50, y: 27, w: 22, color: 'rosa' },
+      { ...base, itemId: 'tapete-retangular', x: 50, y: 82, w: 50, color: 'rosa' },
+      { ...base, itemId: 'trono', x: 50, y: 61, w: 28, color: 'rosa' },
+    ],
   },
   {
     id: 'banheiro',
@@ -74,7 +78,11 @@ export const ROOMS: readonly RoomInfo[] = [
       floorColor: 'perola',
       floorPattern: 'ladrilho',
     },
-    starterItems: [],
+    starterItems: [
+      { ...base, itemId: 'espelho-oval', x: 50, y: 28, w: 16, color: 'azul' },
+      { ...base, itemId: 'banheira', x: 46, y: 67, w: 40, color: 'rosa' },
+      { ...base, itemId: 'samambaia', x: 85, y: 72, w: 16, color: 'perola' },
+    ],
   },
   {
     id: 'cozinha',
@@ -89,7 +97,11 @@ export const ROOMS: readonly RoomInfo[] = [
       floorColor: 'rosa',
       floorPattern: 'xadrez',
     },
-    starterItems: [],
+    starterItems: [
+      { ...base, itemId: 'janela-arco', x: 68, y: 30, w: 24, color: 'menta' },
+      { ...base, itemId: 'armario-cozinha', x: 26, y: 63, w: 30, color: 'menta' },
+      { ...base, itemId: 'fogao', x: 68, y: 67, w: 26, color: 'azul' },
+    ],
   },
   {
     id: 'baile',
@@ -104,7 +116,11 @@ export const ROOMS: readonly RoomInfo[] = [
       floorColor: 'perola',
       floorPattern: 'marmore',
     },
-    starterItems: [],
+    starterItems: [
+      { ...base, itemId: 'cortina', x: 12, y: 36, w: 16, color: 'lilas' },
+      { ...base, itemId: 'cortina', x: 88, y: 36, w: 16, color: 'lilas', flip: true },
+      { ...base, itemId: 'lustre-cristal', x: 50, y: 19, w: 34, color: 'rosa' },
+    ],
   },
   {
     id: 'closet',
@@ -119,7 +135,11 @@ export const ROOMS: readonly RoomInfo[] = [
       floorColor: 'rosa',
       floorPattern: 'carpete',
     },
-    starterItems: [],
+    starterItems: [
+      { ...base, itemId: 'tapete-coracao', x: 52, y: 84, w: 42, color: 'rosa' },
+      { ...base, itemId: 'guarda-roupa', x: 24, y: 60, w: 26, color: 'perola' },
+      { ...base, itemId: 'espelho-chao', x: 78, y: 64, w: 16, color: 'rosa' },
+    ],
   },
   {
     id: 'jardim',
@@ -128,7 +148,11 @@ export const ROOMS: readonly RoomInfo[] = [
     starter: false,
     cost: 70,
     defaultDecor: { kind: 'exterior', castleColor: 'perola', roofColor: 'lilas', ground: 'flores' },
-    starterItems: [],
+    starterItems: [
+      { ...base, itemId: 'arco-flores', x: 50, y: 66, w: 36, color: 'rosa' },
+      { ...base, itemId: 'canteiro', x: 20, y: 86, w: 34, color: 'rosa' },
+      { ...base, itemId: 'borboletas', x: 78, y: 22, w: 16, color: 'rosa' },
+    ],
   },
 ];
 

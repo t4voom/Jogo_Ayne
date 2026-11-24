@@ -1,6 +1,7 @@
 import { circle, flower, fs, g, heart, leaf, path, rect, rose, shadow, shine, st } from '../kit';
 import { FIXED } from '../palette';
 import type { ArtPack } from '../types';
+import extra from './plantas-extra';
 
 const GOLD = FIXED.gold;
 const L = FIXED.leaf;
@@ -84,6 +85,7 @@ const arbustoCoracao = {
 } satisfies ArtPack[string];
 
 export default {
+  ...extra,
   'vaso-rosas': vasoRosas,
   'arbusto-coracao': arbustoCoracao,
 } satisfies ArtPack;

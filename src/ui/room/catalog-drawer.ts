@@ -215,7 +215,14 @@ export class CatalogDrawer {
       return;
     }
     this.list.classList.remove('is-paint');
-    const items = query ? searchItems(query, ITEMS) : itemsByCategory(this.tab as Category);
+    // Sugeridos para este cômodo primeiro; depois os já liberados.
+    const roomId = this.o.getRoom().id;
+    const rank = (item: CatalogItem) =>
+      (item.rooms.includes(roomId) ? 0 : 2) + (this.o.isUnlocked(item) ? 0 : 1);
+    const items = (query ? searchItems(query, ITEMS) : itemsByCategory(this.tab as Category))
+      .map((item, index) => ({ item, index }))
+      .sort((a, b) => rank(a.item) - rank(b.item) || a.index - b.index)
+      .map((x) => x.item);
     if (items.length === 0) {
       this.list.replaceChildren(
         h('p', {

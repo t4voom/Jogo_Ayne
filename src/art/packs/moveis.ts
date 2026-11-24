@@ -15,30 +15,8 @@ import {
 } from '../kit';
 import { FIXED } from '../palette';
 import type { ArtPack } from '../types';
-
-const GOLD = FIXED.gold;
-
-/** Coroa dourada pequena (remate de móveis). */
-function crownTop(cx: number, cy: number, s: number): string {
-  const d = `M${cx - 14 * s} ${cy + 8 * s} L${cx - 16 * s} ${cy - 6 * s} L${cx - 7 * s} ${cy + 1 * s} L${cx} ${cy - 10 * s} L${cx + 7 * s} ${cy + 1 * s} L${cx + 16 * s} ${cy - 6 * s} L${cx + 14 * s} ${cy + 8 * s}Z`;
-  return (
-    path(d, fs('url(#k-gold)', GOLD.line, 2 * s)) +
-    circle(cx, cy - 11 * s, 2.6 * s, { fill: '#fff', stroke: GOLD.line, 'stroke-width': s }) +
-    circle(cx - 16 * s, cy - 7 * s, 2 * s, { fill: '#fff' }) +
-    circle(cx + 16 * s, cy - 7 * s, 2 * s, { fill: '#fff' })
-  );
-}
-
-/** Babado ondulado (barra de colcha, sanefa). */
-function scallops(x0: number, x1: number, y: number, n: number, depth: number): string {
-  const step = (x1 - x0) / n;
-  let d = `M${x0} ${y}`;
-  for (let i = 0; i < n; i++) {
-    const a = x0 + i * step;
-    d += ` Q${a + step / 2} ${y + depth} ${a + step} ${y}`;
-  }
-  return d;
-}
+import { GOLD, crownTop, scallops } from './common';
+import extra from './moveis-extra';
 
 const camaDossel = {
   w: 260,
@@ -292,6 +270,7 @@ const criadoMudo = {
 } satisfies ArtPack[string];
 
 export default {
+  ...extra,
   'cama-dossel': camaDossel,
   penteadeira,
   trono,

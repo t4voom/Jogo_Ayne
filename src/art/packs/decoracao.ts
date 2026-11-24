@@ -15,6 +15,7 @@ import {
 } from '../kit';
 import { FIXED } from '../palette';
 import type { ArtPack } from '../types';
+import extra from './decoracao-extra';
 
 const GOLD = FIXED.gold;
 
@@ -290,6 +291,7 @@ const coroaAlmofada = {
 } satisfies ArtPack[string];
 
 export default {
+  ...extra,
   'lustre-cristal': lustre,
   'espelho-oval': espelhoOval,
   'tapete-redondo': tapeteRedondo,

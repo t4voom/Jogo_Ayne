@@ -58,3 +58,17 @@ for (const r of variants) {
   roomsEl.append(d);
 }
 document.body.dataset['ready'] = '1';
+
+// Cômodos com os itens iniciais (como aparecem ao desbloquear).
+const { composeRoomSvg } = await import('../src/render/compose');
+const { getItem } = await import('../src/catalog/items');
+const { ROOM_IDS } = await import('../src/core/model');
+const starters = document.createElement('div');
+starters.className = 'rooms';
+starters.id = 'starters';
+for (const id of ROOM_IDS) {
+  const d = document.createElement('div');
+  d.innerHTML = composeRoomSvg(createRoom(id, ids, 0), reg, getItem);
+  starters.append(d);
+}
+document.body.append(starters);

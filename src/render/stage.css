@@ -435,3 +435,220 @@
 .stage.is-paused * {
   animation-play-state: paused !important;
 }
+
+/* Bolhas da banheira, vapor da chaleira e patinho. */
+.a-float {
+  animation: float-up 3.6s ease-in-out infinite;
+}
+
+.a-bob {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: bob 2.4s ease-in-out infinite;
+}
+
+.a-steam {
+  animation: steam 2.8s ease-in-out infinite;
+}
+
+@keyframes float-up {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes bob {
+  50% {
+    transform: translateY(-2px) rotate(-4deg);
+  }
+}
+
+@keyframes steam {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  40% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a-float,
+  .a-bob,
+  .a-steam {
+    animation: none !important;
+  }
+}
+
+.a-pendulum {
+  transform-box: view-box;
+  transform-origin: 70px 120px;
+  animation: pendulum 2s ease-in-out infinite;
+}
+
+.a-spin {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: twirl 6s ease-in-out infinite;
+}
+
+.a-snow {
+  animation: snow 4s ease-in-out infinite;
+}
+
+@keyframes pendulum {
+  0%,
+  100% {
+    transform: rotate(10deg);
+  }
+  50% {
+    transform: rotate(-10deg);
+  }
+}
+
+@keyframes twirl {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+  25% {
+    transform: scaleX(0.82);
+  }
+  50% {
+    transform: scaleX(-1);
+  }
+  75% {
+    transform: scaleX(-0.82);
+  }
+}
+
+@keyframes snow {
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a-pendulum,
+  .a-spin,
+  .a-snow {
+    animation: none !important;
+  }
+}
+
+.a-petals {
+  animation: petals 5s ease-in-out infinite;
+}
+
+@keyframes petals {
+  0% {
+    transform: translate(0, -10px);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(12px, 14px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a-petals {
+    animation: none !important;
+  }
+}
+
+.a-flutter {
+  animation: flutter 3s ease-in-out infinite;
+}
+
+.a-swim {
+  animation: swim 4s ease-in-out infinite;
+}
+
+.a-swim-2 {
+  animation-duration: 5.2s;
+  animation-direction: reverse;
+}
+
+@keyframes flutter {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(4px, -6px) scaleX(0.9);
+  }
+  50% {
+    transform: translate(-2px, -10px);
+  }
+  75% {
+    transform: translate(-5px, -4px) scaleX(0.9);
+  }
+}
+
+@keyframes swim {
+  50% {
+    transform: translate(10px, -3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a-flutter,
+  .a-swim {
+    animation: none !important;
+  }
+}
+
+.a-swing {
+  transform-box: view-box;
+  transform-origin: 95px 30px;
+  animation: swing 3s ease-in-out infinite;
+}
+
+.a-rotate {
+  transform-box: view-box;
+  transform-origin: 85px 85px;
+  animation: rotate 30s linear infinite;
+}
+
+.a-drift-small {
+  animation: drift-small 6s ease-in-out infinite;
+}
+
+@keyframes swing {
+  0%,
+  100% {
+    transform: rotate(5deg);
+  }
+  50% {
+    transform: rotate(-5deg);
+  }
+}
+
+@keyframes rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes drift-small {
+  50% {
+    transform: translateX(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a-swing,
+  .a-rotate,
+  .a-drift-small {
+    animation: none !important;
+  }
+}

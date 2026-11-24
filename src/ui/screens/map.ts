@@ -5,6 +5,7 @@ import { composeRoomSvg } from '../../render/compose';
 import type { GameContext } from '../context';
 import { h, icon, iconButton } from '../dom';
 import type { Screen } from '../router';
+import { createSyncIndicator } from '../sync-indicator';
 import '../styles/map.css';
 
 /** Ordem dos andares no corte do castelo (de cima para baixo). */
@@ -77,6 +78,7 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
     return card;
   };
 
+  const sync = createSyncIndicator(ctx.cloud);
   const header = h(
     'header',
     { class: 'map-top' },
@@ -84,7 +86,14 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
       void ctx.router.go({ name: 'opening' });
     }),
     h('h1', { class: 'map-title title-display', text: 'Meu Castelo' }),
-    h('div', { class: 'map-top-actions' }),
+    h(
+      'div',
+      { class: 'map-top-actions' },
+      sync.el,
+      iconButton('gear', 'Configurações', () => {
+        void ctx.router.go({ name: 'settings' });
+      }),
+    ),
   );
 
   const castle = h(
@@ -124,6 +133,7 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
   return {
     el,
     destroy() {
+      sync.destroy();
       el.remove();
     },
   };

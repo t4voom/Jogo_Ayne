@@ -6,6 +6,23 @@ Todas as mudanças relevantes do projeto. Formato baseado em
 
 ## [Não lançado]
 
+### Fase 3 — Planilha e sincronização
+
+- `apps-script/Code.gs` completo: `setup()`, `doGet` (ping) e `doPost`
+  (`load`, `saveRoom`, `saveProfile`, `savePhoto`, `deletePhoto`), PIN em
+  Script Properties com limite de tentativas (CacheService), `LockService`,
+  concorrência otimista por revisão, pedaços de 45 mil caracteres, validação
+  rígida, leitura/escrita em lote e aba `log` com rotação.
+- Testes do backend rodando o `Code.gs` real numa planilha simulada.
+- Motor de sincronização offline-first: fila persistente, debounce de 3 s,
+  envio ao ir para segundo plano, retry com backoff, reconciliação por cômodo,
+  conflito sem perda (versão anterior restaurável) e mescla do perfil.
+- Tela "Digite o código do castelo", indicador de sync no topo (com detalhes e
+  "tentar de novo"), Configurações (sons/toque, nuvem, versões anteriores,
+  créditos).
+- E2E de dois aparelhos, PIN errado e offline com a planilha simulada.
+- ADRs 0008 e 0009; passo a passo em `apps-script/README.md`.
+
 ### Fase 2 — Núcleo do jogo
 
 - Modelo do domínio (cômodos, itens, decoração, luz) com schemas zod,

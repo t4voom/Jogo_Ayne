@@ -1,6 +1,7 @@
 # dependências e build
 node_modules
 dist
+dist-e2e
 dev-dist
 *.tsbuildinfo
 

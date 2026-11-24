@@ -1,5 +1,6 @@
 import { ROOM_IDS, type RoomId } from '../core/model';
 import { createLogger } from '../core/log';
+import { closeTopSheet } from './sheet';
 
 const log = createLogger('router');
 
@@ -84,9 +85,9 @@ export class Router {
 
   start(): Promise<void> {
     window.addEventListener('popstate', () => {
-      if (this.current?.screen.back?.()) {
+      if (closeTopSheet() || this.current?.screen.back?.()) {
         // A tela tratou o voltar (ex.: fechou um painel): restaura a URL.
-        history.pushState(null, '', routeToHash(this.current.route));
+        if (this.current) history.pushState(null, '', routeToHash(this.current.route));
         return;
       }
       const route = hashToRoute(location.hash) ?? { name: 'opening' };

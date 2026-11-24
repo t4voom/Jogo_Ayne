@@ -20,7 +20,7 @@ const STARS: readonly [number, number, number, number][] = [
   [4, 52, 6, 2.8],
 ];
 
-export function createOpeningScreen(onEnter: () => void): Screen {
+export function createOpeningScreen(onEnter: () => void | Promise<void>): Screen {
   const scene = h('div', {
     class: 'opening-scene',
     html: roomBackgroundSvg({ ...createRoom('fachada', () => 'x', 0), ambience: 'entardecer' }),
@@ -49,7 +49,11 @@ export function createOpeningScreen(onEnter: () => void): Screen {
     {
       class: 'btn btn-primary opening-enter',
       attrs: { type: 'button' },
-      on: { click: onEnter },
+      on: {
+        click: () => {
+          void onEnter();
+        },
+      },
     },
     icon('castle'),
     h('span', { text: 'Entrar no castelo' }),

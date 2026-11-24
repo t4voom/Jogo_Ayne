@@ -52,6 +52,16 @@ abra o endereço "Network" que aparecer.
 Nunca versione `.env.local`, PINs ou URLs privadas. O passo a passo da planilha
 está em [`apps-script/README.md`](apps-script/README.md).
 
+### Sincronização (tablet ↔ celular)
+
+O jogo salva tudo primeiro no aparelho (IndexedDB) e sincroniza em segundo
+plano com uma planilha do Google. Com a planilha configurada, na primeira vez
+aparece **"Digite o código do castelo"**; o indicador no topo mostra se está
+tudo salvo (☁️✓), enviando (🔄), sem internet (☁️ cinza — salvo no aparelho) ou
+com erro (⚠️, toque para detalhes). Se os dois aparelhos mexerem no mesmo
+cômodo sem internet, fica a versão mais recente e a outra aparece em
+**Configurações → Versões anteriores** para restaurar.
+
 ### Scripts
 
 | Comando                 | O que faz                                                 |
@@ -66,6 +76,10 @@ está em [`apps-script/README.md`](apps-script/README.md).
 | `npm run test:e2e`      | Testes e2e (Playwright: iPhone 14 e Galaxy Tab)           |
 | `npm run check`         | lint + typecheck + testes + build                         |
 | `npm run icons`         | Regera os ícones PNG a partir de `public/icons/crown.svg` |
+
+Os e2e usam uma planilha simulada (o `Code.gs` real rodando no Node,
+interceptando a rede), então não precisam de internet nem de conta Google.
+Prints para conferência visual: `VISUAL=1 npx playwright test screens.visual`.
 
 Para os e2e locais: `npx playwright install chromium webkit` uma vez. Sem
 WebKit, rode `E2E_WEBKIT=0 npm run test:e2e` (o iPhone é emulado no Chromium).

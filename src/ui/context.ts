@@ -1,5 +1,7 @@
 import type { ArtRegistry } from '../art/registry';
 import type { IdGenerator } from '../core/ids';
+import type { Cloud } from '../persistence/cloud';
+import type { LocalRepository } from '../persistence/local-repository';
 import type { Room, RoomId } from '../core/model';
 import type { GameActions } from '../state/actions';
 import type { Store } from '../state/store';
@@ -16,6 +18,9 @@ export interface GameContext {
   readonly haptics: Haptics;
   readonly router: Router;
   readonly newId: IdGenerator;
+  readonly cloud: Cloud;
+  /** null quando o IndexedDB não está disponível (modo só memória). */
+  readonly repo: LocalRepository | null;
   /** Garante que o cômodo existe no estado (cria com a decoração inicial). */
   ensureRoom(roomId: RoomId): Room;
   isRoomUnlocked(roomId: RoomId): boolean;

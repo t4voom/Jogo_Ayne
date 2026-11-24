@@ -15,6 +15,7 @@ import { CatalogDrawer } from '../room/catalog-drawer';
 import { ItemToolbar, type ItemCommands } from '../room/item-toolbar';
 import { openQuickMenu } from '../room/quick-menu';
 import type { Screen } from '../router';
+import { createSyncIndicator } from '../sync-indicator';
 import '../styles/room.css';
 
 export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promise<Screen> {
@@ -39,7 +40,9 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
     ctx.store.redo(roomId);
     ctx.haptics.play('light');
   });
-  const syncSlot = h('div', { class: 'room-sync-slot' });
+  const sync = createSyncIndicator(ctx.cloud);
+  cleanups.push(sync.destroy);
+  const syncSlot = h('div', { class: 'room-sync-slot' }, sync.el);
   const top = h(
     'header',
     { class: 'room-top' },

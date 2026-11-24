@@ -5,6 +5,7 @@ import { ROOM_IDS, type Room, type RoomId } from '../core/model';
 import type { Profile } from '../core/profile';
 import { parseProfile, parseRoom, serializeProfile, serializeRoom } from '../core/save';
 import { Database } from './idb';
+import type { OutboxEntry, OutboxStore } from './sync-engine';
 
 /**
  * Repositório local (IndexedDB). É a primeira e mais importante camada de
@@ -160,6 +161,15 @@ export class LocalRepository {
   async deleteMeta(key: string): Promise<void> {
     await this.db.delete(STORES.meta, key);
   }
+
+  // ----------------------------------------------------------- fila de sync
+
+  /** Fila persistente de pendências de sincronização. */
+  readonly outbox: OutboxStore = {
+    list: async () => (await this.db.getAll(STORES.outbox)) as OutboxEntry[],
+    put: (entry) => this.db.put(STORES.outbox, entry),
+    remove: (key) => this.db.delete(STORES.outbox, key),
+  };
 
   // ------------------------------------------------- backups / versões antigas
 

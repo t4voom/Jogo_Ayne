@@ -1,6 +1,11 @@
 /// <reference types="vitest/config" />
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
+  version: string;
+};
 
 /**
  * O GitHub Pages serve o site em https://<usuario>.github.io/<repositorio>/,
@@ -15,6 +20,9 @@ const BACKGROUND_COLOR = '#fff4f9';
 
 export default defineConfig({
   base,
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   build: {
     target: ['es2022', 'safari16.4', 'chrome111'],
     cssTarget: ['safari16.4', 'chrome111'],
@@ -79,7 +87,7 @@ export default defineConfig({
     }),
   ],
   test: {
-    include: ['src/**/*.test.ts', 'apps-script/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'apps-script/**/*.test.ts', 'tests/integration/**/*.test.ts'],
     environment: 'node',
     restoreMocks: true,
     coverage: {

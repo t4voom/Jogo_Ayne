@@ -116,6 +116,7 @@ test.describe('cômodo', () => {
 test('abertura → mapa → cômodo', async ({ page }) => {
   await page.goto('./');
   await page.getByRole('button', { name: 'Entrar no castelo' }).click({ force: true });
+  await page.getByRole('button', { name: 'Jogar só neste aparelho' }).click();
   await expect(page.getByRole('heading', { name: 'Meu Castelo' })).toBeVisible();
   await page.getByRole('button', { name: 'Abrir Quarto da Princesa' }).click();
   await expect(page.getByRole('heading', { name: /Quarto da Princesa/ })).toBeVisible();

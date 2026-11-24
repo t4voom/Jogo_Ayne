@@ -5,6 +5,7 @@ import '@fontsource/dancing-script/latin-700.css';
 import './ui/styles/tokens.css';
 import './ui/styles/base.css';
 import './ui/styles/components.css';
+import './ui/styles/cloud.css';
 
 import { installSharedDefs } from './art/defs';
 import { ArtRegistry } from './art/registry';
@@ -13,6 +14,7 @@ import { createLogger, logHub } from './core/log';
 import type { Room, RoomId } from './core/model';
 import { createProfile } from './core/profile';
 import { createRoom, roomInfo } from './core/rooms';
+import { setupSync } from './app/sync-wiring';
 import { Autosaver } from './persistence/autosave';
 import { LocalRepository, requestPersistentStorage } from './persistence/local-repository';
 import { GameActions } from './state/actions';
@@ -95,6 +97,7 @@ async function boot(): Promise<void> {
   const art = new ArtRegistry();
 
   // ------------------------------------------ salvamento automático local
+  let flushLocal = (): Promise<void> => Promise.resolve();
   if (repo) {
     const autosaver = new Autosaver(repo, {
       onStatus: (status) => {
@@ -109,6 +112,7 @@ async function boot(): Promise<void> {
       if (event.type === 'room' && event.source !== 'load') autosaver.room(event.next);
       if (event.type === 'profile' && event.source !== 'load') autosaver.profile(event.next);
     });
+    flushLocal = () => autosaver.flush();
     const flush = () => {
       void autosaver.flush();
     };
@@ -118,6 +122,9 @@ async function boot(): Promise<void> {
     window.addEventListener('pagehide', flush);
     void requestPersistentStorage(log);
   }
+
+  // ----------------------------------------- sincronização com a planilha
+  const cloud = await setupSync({ store, repo, toast, flushLocal: () => flushLocal() });
 
   // ------------------------------------------------------------- telas
   const ensureRoom = (roomId: RoomId): Room => {
@@ -135,17 +142,24 @@ async function boot(): Promise<void> {
     const c = ctx;
     switch (route.name) {
       case 'opening':
-        return createOpeningScreen(() => {
-          void c.router.go({ name: 'map' });
+        return createOpeningScreen(async () => {
+          if (c.cloud.shouldAskPin) {
+            const { openPinDialog } = await import('./ui/pin-dialog');
+            await openPinDialog(c.cloud, { canSkip: true });
+          }
+          await c.router.go({ name: 'map' });
         });
       case 'room': {
         const { createRoomScreen } = await import('./ui/screens/room');
         return createRoomScreen(c, route.roomId);
       }
+      case 'settings': {
+        const { createSettingsScreen } = await import('./ui/screens/settings');
+        return createSettingsScreen(c);
+      }
       case 'map':
       case 'album':
-      case 'achievements':
-      case 'settings': {
+      case 'achievements': {
         const { createMapScreen } = await import('./ui/screens/map');
         return createMapScreen(c);
       }
@@ -162,6 +176,8 @@ async function boot(): Promise<void> {
     haptics,
     router,
     newId: randomId,
+    cloud,
+    repo,
     ensureRoom,
     isRoomUnlocked,
   };

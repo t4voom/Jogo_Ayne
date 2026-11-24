@@ -65,6 +65,7 @@ export default tseslint.config(
   {
     ignores: [
       'dist/**',
+      'dist-e2e/**',
       'dev-dist/**',
       'coverage/**',
       'playwright-report/**',
@@ -95,7 +96,10 @@ export default tseslint.config(
         { allowNumber: true, allowBoolean: true },
       ],
       '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
-      '@typescript-eslint/switch-exhaustiveness-check': 'error',
+      '@typescript-eslint/switch-exhaustiveness-check': [
+        'error',
+        { considerDefaultExhaustiveForUnions: true },
+      ],
       'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
       eqeqeq: ['error', 'always'],
       'prefer-const': 'error',

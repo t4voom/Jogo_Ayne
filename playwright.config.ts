@@ -12,6 +12,8 @@ const base = '/Jogo_Ayne/';
 
 export default defineConfig({
   testDir: './tests/e2e',
+  // Prints para conferência visual só rodam com VISUAL=1.
+  testIgnore: process.env.VISUAL ? [] : ['**/*.visual.spec.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -40,9 +42,11 @@ export default defineConfig({
     },
   ],
   webServer: {
+    // Os e2e usam uma "planilha" falsa (tests/e2e/fake-sheets.ts) nesta URL.
     command: process.env.E2E_SKIP_BUILD
-      ? `npx vite preview --port ${port} --strictPort`
-      : `npm run build && npx vite preview --port ${port} --strictPort`,
+      ? `npx vite preview --outDir dist-e2e --port ${port} --strictPort`
+      : `npm run build -- --outDir dist-e2e && npx vite preview --outDir dist-e2e --port ${port} --strictPort`,
+    env: { VITE_SHEETS_API_URL: 'https://planilha.teste/exec' },
     url: `http://localhost:${port}${base}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

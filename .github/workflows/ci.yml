@@ -76,15 +76,10 @@ jobs:
       - name: Instalar navegadores (Chromium + WebKit)
         run: npx playwright install --with-deps chromium webkit
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
-
+      # O e2e faz o próprio build apontando para uma planilha simulada
+      # (tests/e2e/fake-sheets.ts); o deploy usa o build do job "quality".
       - name: Testes E2E
         run: npm run test:e2e
-        env:
-          E2E_SKIP_BUILD: '1'
 
       - name: Relatório do Playwright
         if: failure()

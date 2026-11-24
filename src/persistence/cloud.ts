@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import { createLogger } from '../core/log';
 import type { LocalRepository } from './local-repository';
 import { ApiError, SheetsApi, type Transport } from './sheets-api';
@@ -37,13 +37,16 @@ export class Cloud {
     newId: () => string,
   ): Promise<Cloud> {
     let deviceId = repo
-      ? await repo.getMeta('deviceId', z.string().regex(/^[A-Za-z0-9_-]{1,64}$/))
+      ? await repo.getMeta('deviceId', z.string().check(z.regex(/^[A-Za-z0-9_-]{1,64}$/)))
       : undefined;
     if (!deviceId) {
       deviceId = newId();
       await repo?.setMeta('deviceId', deviceId);
     }
-    const pin = (repo ? await repo.getMeta('pin', z.string().min(1).max(64)) : undefined) ?? null;
+    const pin =
+      (repo
+        ? await repo.getMeta('pin', z.string().check(z.minLength(1), z.maxLength(64)))
+        : undefined) ?? null;
     const skipped = (repo ? await repo.getMeta('pinSkipped', z.boolean()) : undefined) ?? false;
     const holder: { cloud: Cloud | null } = { cloud: null };
     const id = deviceId;

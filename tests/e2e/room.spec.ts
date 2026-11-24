@@ -147,3 +147,90 @@ test('tutorial da fadinha: 4 passos e não volta mais', async ({ page }) => {
   await page.waitForTimeout(900);
   await expect(page.getByRole('dialog', { name: 'Tutorial' })).toHaveCount(0);
 });
+
+test.describe('mais interações', () => {
+  test('arrasta um item direto do catálogo para o palco', async ({ page }) => {
+    await openRoom(page);
+    const before = await items(page).count();
+    const card = page.getByRole('button', { name: 'Adicionar Poltrona fofinha' });
+    const stage = (await page.locator('.stage').boundingBox())!;
+    const target = { x: stage.x + stage.width * 0.3, y: stage.y + stage.height * 0.7 };
+    await card.evaluate(async (el, t) => {
+      const r = el.getBoundingClientRect();
+      const sideways =
+        getComputedStyle(el.closest('.drawer')!).getPropertyValue('--drawer-side').trim() === '1';
+      const from = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      const fire = (type: string, x: number, y: number) =>
+        el.dispatchEvent(
+          new PointerEvent(type, {
+            pointerId: 9,
+            pointerType: 'touch',
+            isPrimary: true,
+            clientX: x,
+            clientY: y,
+            bubbles: true,
+            buttons: type === 'pointerup' ? 0 : 1,
+          }),
+        );
+      const frame = () => new Promise((res) => requestAnimationFrame(() => res(null)));
+      fire('pointerdown', from.x, from.y);
+      // primeiro um movimento claro "em direção ao palco", depois até o destino
+      fire('pointermove', sideways ? from.x - 40 : from.x, sideways ? from.y : from.y - 40);
+      await frame();
+      for (let i = 1; i <= 6; i++) {
+        fire('pointermove', from.x + ((t.x - from.x) * i) / 6, from.y + ((t.y - from.y) * i) / 6);
+        await frame();
+      }
+      fire('pointerup', t.x, t.y);
+    }, target);
+    await expect(items(page)).toHaveCount(before + 1);
+    const box = (await page.locator('.stage-items .item[data-item-id="poltrona"]').boundingBox())!;
+    expect(Math.abs(box.x + box.width / 2 - target.x)).toBeLessThan(8);
+  });
+
+  test('toque longo abre o menu rápido', async ({ page }) => {
+    await openRoom(page);
+    await page.getByRole('button', { name: 'Adicionar Trono real' }).click({ force: true });
+    const c = await centerOf(page, '.stage-items .item[data-item-id="trono"]');
+    await page.evaluate(async (p) => {
+      const stage = document.querySelector('.stage')!;
+      stage.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          pointerId: 3,
+          pointerType: 'touch',
+          isPrimary: true,
+          clientX: p.x,
+          clientY: p.y,
+          bubbles: true,
+          buttons: 1,
+        }),
+      );
+      await new Promise((r) => setTimeout(r, 650));
+      stage.dispatchEvent(
+        new PointerEvent('pointerup', {
+          pointerId: 3,
+          pointerType: 'touch',
+          isPrimary: true,
+          clientX: p.x,
+          clientY: p.y,
+          bubbles: true,
+        }),
+      );
+    }, c);
+    const menu = page.getByRole('menu', { name: 'Ações do item' });
+    await expect(menu).toBeVisible();
+    await menu.getByRole('menuitem', { name: 'Duplicar' }).click();
+    await expect(
+      page.locator('.stage-items .item[data-item-id="trono"]:not(.is-leaving)'),
+    ).toHaveCount(2);
+  });
+
+  test('modo Ver esconde a interface e volta', async ({ page }) => {
+    await openRoom(page);
+    await page.getByRole('button', { name: 'Modo ver: esconder os botões' }).click();
+    await expect(page.locator('.drawer')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Desfazer' })).toBeHidden();
+    await page.getByRole('button', { name: 'Sair do modo ver' }).click();
+    await expect(page.locator('.drawer')).toBeVisible();
+  });
+});

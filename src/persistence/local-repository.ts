@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import type * as z from 'zod/mini';
 import { createLogger, type Logger } from '../core/log';
 import { FutureVersionError } from '../core/migrations';
 import { ROOM_IDS, type Room, type RoomId } from '../core/model';
@@ -153,7 +153,7 @@ export class LocalRepository {
 
   // --------------------------------------------------------------------- meta
 
-  async getMeta<T>(key: string, schema: z.ZodType<T>): Promise<T | undefined> {
+  async getMeta<T>(key: string, schema: z.ZodMiniType<T>): Promise<T | undefined> {
     const raw = await this.db.get(STORES.meta, key);
     if (raw === undefined) return undefined;
     const parsed = schema.safeParse(raw);

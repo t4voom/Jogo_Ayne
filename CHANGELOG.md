@@ -4,7 +4,24 @@ Todas as mudanças relevantes do projeto. Formato baseado em
 [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e versões em
 [SemVer](https://semver.org/lang/pt-BR/).
 
-## [Não lançado]
+## [1.0.0] — 2026-11-24
+
+Primeira versão completa, presente para a Ayne. 👑
+
+### Fase 7 — PWA, desempenho, acessibilidade e revisão final
+
+- Splash screens do iPhone, banner que ensina a instalar (Safari no iPhone,
+  botão de verdade no Android), e2e de funcionamento offline.
+- Content-Security-Policy no build de produção; miniaturas vindas da planilha
+  validadas também no aparelho.
+- `zod/mini` no lugar do zod completo (bundle inicial menor).
+- Acessibilidade 100 no Lighthouse: nomes acessíveis iguais ao texto visível,
+  itens do palco com `role="img"`, tutorial sem deslocamento de layout.
+- Mapa mostra quantas estrelinhas faltam para abrir cada cômodo.
+- E2E de arrastar do catálogo, toque longo, modo Ver, PWA e instalação.
+- Medição de FPS (`scripts/fps.mjs`): 60 fps arrastando com CPU 4× mais lenta.
+- ADR 0013.
+
 
 ### Fase 6 — Álbum, áudio, tutorial, dia/noite e polimento
 

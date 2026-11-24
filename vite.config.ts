@@ -1,6 +1,6 @@
 /// <reference types="vitest/config" />
 import { readFileSync } from 'node:fs';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
@@ -18,6 +18,50 @@ const base = process.env.VITE_BASE ?? REPO_BASE;
 const THEME_COLOR = '#f4a6c6';
 const BACKGROUND_COLOR = '#fff4f9';
 
+/**
+ * Content-Security-Policy do build de produção: só scripts do próprio site e
+ * conexões com a planilha (Apps Script redireciona para googleusercontent).
+ */
+function cspPlugin(): Plugin {
+  const sheets = process.env.VITE_SHEETS_API_URL?.trim();
+  const connect = [
+    "'self'",
+    'data:',
+    'blob:',
+    'https://script.google.com',
+    'https://script.googleusercontent.com',
+  ];
+  if (sheets) {
+    try {
+      connect.push(new URL(sheets).origin);
+    } catch {
+      // URL inválida: o jogo funciona só no aparelho.
+    }
+  }
+  const policy = [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    `connect-src ${[...new Set(connect)].join(' ')}`,
+    "worker-src 'self'",
+    "manifest-src 'self'",
+    "base-uri 'self'",
+    "form-action 'none'",
+    "object-src 'none'",
+  ].join('; ');
+  return {
+    name: 'castelo-csp',
+    apply: 'build',
+    transformIndexHtml: (html) =>
+      html.replace(
+        '<meta charset="UTF-8" />',
+        `<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${policy}" />`,
+      ),
+  };
+}
+
 export default defineConfig({
   base,
   define: {
@@ -30,6 +74,7 @@ export default defineConfig({
     assetsInlineLimit: 2048,
   },
   plugins: [
+    cspPlugin(),
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,

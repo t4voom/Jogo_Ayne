@@ -7,6 +7,28 @@ do Google.
 
 **Jogar:** https://t4voom.github.io/Jogo_Ayne/
 
+## O que tem no castelo
+
+- **8 cômodos**: Fachada, Quarto da Princesa e Sala do Trono já abertos;
+  Banheiro Real, Cozinha Encantada, Salão de Baile, Closet e Jardim Encantado
+  se abrem com estrelinhas.
+- **101 itens** com arte própria, em 6 cores cada (rosa, lilás, azul bebê,
+  menta, dourado e branco pérola), vários com animações (bichinhos respiram e
+  piscam, velas tremulam, a fonte corre…).
+- **Decorar no toque**: tocar ou arrastar do catálogo, mover com um dedo,
+  pinça para redimensionar e girar, toque longo para o menu rápido, barra do
+  item, lixeira, ímã de alinhamento, desfazer/refazer e modo **Ver**.
+- **Pintar**: 12 cores e 7 padrões de parede, 6 pisos em perspectiva; na
+  fachada, cor do castelo, do telhado e o chão; **dia, entardecer e noite**,
+  com as luzes acendendo.
+- **Progressão**: estrelinhas, 17 missões, 15 medalhas, presente diário,
+  mensagens carinhosas e uma **carta surpresa** no fim.
+- **Álbum de fotos** com moldura de princesa, para compartilhar ou baixar.
+- **Música de caixinha** original e efeitos, tudo sintetizado.
+- **Tutorial** com a Fadinha Luz na primeira vez.
+- **Nunca perde nada**: salva no aparelho na hora, sincroniza com a planilha
+  e funciona offline.
+
 ---
 
 ## Instalar na tela inicial
@@ -64,18 +86,23 @@ cômodo sem internet, fica a versão mais recente e a outra aparece em
 
 ### Scripts
 
-| Comando                 | O que faz                                                 |
-| ----------------------- | --------------------------------------------------------- |
-| `npm run dev`           | Servidor de desenvolvimento                               |
-| `npm run build`         | Build de produção em `dist/` (com service worker)         |
-| `npm run preview`       | Serve o `dist/` localmente                                |
-| `npm run lint`          | ESLint (inclui a regra de camadas da arquitetura)         |
-| `npm run typecheck`     | TypeScript `strict`                                       |
-| `npm test`              | Testes de unidade (Vitest)                                |
-| `npm run test:coverage` | Testes de unidade com cobertura                           |
-| `npm run test:e2e`      | Testes e2e (Playwright: iPhone 14 e Galaxy Tab)           |
-| `npm run check`         | lint + typecheck + testes + build                         |
-| `npm run icons`         | Regera os ícones PNG a partir de `public/icons/crown.svg` |
+| Comando                      | O que faz                                                 |
+| ---------------------------- | --------------------------------------------------------- |
+| `npm run dev`                | Servidor de desenvolvimento                               |
+| `npm run build`              | Build de produção em `dist/` (com service worker)         |
+| `npm run preview`            | Serve o `dist/` localmente                                |
+| `npm run lint`               | ESLint (inclui a regra de camadas da arquitetura)         |
+| `npm run typecheck`          | TypeScript `strict`                                       |
+| `npm test`                   | Testes de unidade (Vitest)                                |
+| `npm run test:coverage`      | Testes de unidade com cobertura                           |
+| `npm run test:e2e`           | Testes e2e (Playwright: iPhone 14 e Galaxy Tab)           |
+| `npm run check`              | lint + typecheck + testes + build                         |
+| `npm run icons`              | Regera os ícones PNG a partir de `public/icons/crown.svg` |
+| `npm run splash`             | Regera as splash screens do iPhone                        |
+| `node scripts/fps.mjs <url>` | Mede o FPS do arrasto (CPU 4× mais lenta)                 |
+
+Prévia de toda a arte (itens, cores, fundos e cômodos): com `npm run dev`,
+abra `/Jogo_Ayne/dev/art-preview.html` (`?cores` mostra todas as cores).
 
 Os e2e usam uma planilha simulada (o `Code.gs` real rodando no Node,
 interceptando a rede), então não precisam de internet nem de conta Google.
@@ -91,6 +118,19 @@ WebKit, rode `E2E_WEBKIT=0 npm run test:e2e` (o iPhone é emulado no Chromium).
 O workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda
 **lint → typecheck → testes → build → e2e** em todo PR e push; em push na
 `main`, publica no GitHub Pages.
+
+### Publicar pela primeira vez
+
+1. Faça o merge do PR na `main` (o CI precisa estar verde).
+2. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
+   Hoje o Pages está como "deploy from a branch"; precisa trocar.
+3. Siga [`apps-script/README.md`](apps-script/README.md) para criar a
+   planilha, definir o PIN e publicar o Apps Script.
+4. Cadastre o secret `VITE_SHEETS_API_URL` (abaixo) e rode o workflow de novo
+   (aba **Actions → CI/CD → Run workflow**).
+5. No celular e no tablet da Ayne, abra o link, instale na tela inicial e
+   digite o código do castelo.
+6. Escreva a carta em [`src/content/carta.ts`](src/content/carta.ts) 💌
 
 Configuração única no GitHub:
 
@@ -126,6 +166,18 @@ tests/e2e/      testes Playwright
 
 As decisões estão em [`docs/adr/`](docs/adr/README.md) e as mudanças no
 [`CHANGELOG.md`](CHANGELOG.md).
+
+## Qualidade
+
+- TypeScript `strict` sem `any`; ESLint `strict-type-checked` com a regra de
+  camadas; Prettier; commits convencionais verificados no `commit-msg`.
+- Testes de unidade/integração (Vitest): domínio, Commands, migrações,
+  persistência, motor de sync contra o `Code.gs` real, progressão, arte.
+- E2E (Playwright, iPhone 14 em WebKit e Galaxy Tab S9): adicionar, mover,
+  pinça, barra do item, pintar, desfazer, salvar/recarregar, lixeira, arrastar
+  do catálogo, toque longo, modo Ver, tutorial, desbloqueio, missões, álbum,
+  sincronização entre dois aparelhos, offline e instalação.
+- Lighthouse (celular): desempenho 99–100, acessibilidade 100, boas práticas 100. Arrasto a 60 fps com CPU 4× mais lenta.
 
 ## A carta surpresa 💌
 

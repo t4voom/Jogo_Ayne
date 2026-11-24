@@ -9,6 +9,7 @@ import { confetti } from '../../fx/confetti';
 import { openDailyGift } from '../daily-gift';
 import { confirmSheet } from '../sheet';
 import { createStarsPill } from '../stars-pill';
+import { maybeShowInstallBanner } from '../install-banner';
 import { createSyncIndicator } from '../sync-indicator';
 import '../styles/map.css';
 import '../styles/progression.css';
@@ -23,6 +24,23 @@ const FLOORS: readonly (readonly RoomId[])[] = [
 export async function createMapScreen(ctx: GameContext): Promise<Screen> {
   await ctx.art.loadMany(CATEGORIES);
 
+  const lockBadge = (cost: number) => {
+    const missing = cost - ctx.progression.stars;
+    return h(
+      'span',
+      {
+        class: `map-lock ${missing <= 0 ? 'is-ready' : ''}`.trim(),
+        attrs: { 'aria-hidden': 'true' },
+      },
+      icon(missing <= 0 ? 'unlock' : 'lock'),
+      h('span', { class: 'map-lock-cost' }, icon('starFill', 'icon map-star'), String(cost)),
+      h('span', {
+        class: 'map-lock-missing',
+        text: missing > 0 ? `faltam ${missing}` : 'toque para abrir!',
+      }),
+    );
+  };
+
   const roomCard = (roomId: RoomId, variant: 'inside' | 'outside') => {
     const info = roomInfo(roomId);
     const unlocked = ctx.isRoomUnlocked(roomId);
@@ -36,12 +54,7 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
       {
         class: `map-room map-room-${variant} ${unlocked ? '' : 'is-locked'}`.trim(),
         dataset: { room: roomId },
-        attrs: {
-          type: 'button',
-          'aria-label': unlocked
-            ? `Abrir ${info.name}`
-            : `${info.name} — bloqueado, precisa de ${info.cost} estrelinhas`,
-        },
+        attrs: { type: 'button' },
         on: {
           click: () => {
             if (unlocked) {
@@ -76,25 +89,20 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
         },
       },
       h('span', { class: 'map-frame' }, thumb),
-      unlocked
-        ? null
-        : h(
-            'span',
-            { class: 'map-lock' },
-            icon('lock'),
-            h(
-              'span',
-              { class: 'map-lock-cost' },
-              icon('starFill', 'icon map-star'),
-              String(info.cost),
-            ),
-          ),
       h(
         'span',
         { class: 'map-plate' },
-        h('span', { class: 'map-emoji', text: info.emoji }),
+        h('span', { class: 'map-emoji', text: info.emoji, attrs: { 'aria-hidden': 'true' } }),
+        unlocked ? h('span', { class: 'sr-only', text: 'Abrir ' }) : null,
         info.name,
+        unlocked
+          ? null
+          : h('span', {
+              class: 'sr-only',
+              text: ` — bloqueado, custa ${info.cost} estrelinhas${info.cost > ctx.progression.stars ? `, faltam ${info.cost - ctx.progression.stars}` : ''}`,
+            }),
       ),
+      unlocked ? null : lockBadge(info.cost),
     );
     return card;
   };
@@ -182,9 +190,13 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
   );
 
   const el = h('div', { class: 'map-screen' }, header, scroller);
+  const installTimer = window.setTimeout(() => {
+    maybeShowInstallBanner(document.body);
+  }, 4000);
   return {
     el,
     destroy() {
+      window.clearTimeout(installTimer);
       sync.destroy();
       pill.destroy();
       el.remove();

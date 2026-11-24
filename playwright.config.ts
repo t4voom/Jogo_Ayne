@@ -28,6 +28,16 @@ export default defineConfig({
     serviceWorkers: 'allow',
     locale: 'pt-BR',
     timezoneId: 'America/Sao_Paulo',
+    // O banner de instalação fica dispensado nos testes (tem teste próprio).
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: `http://localhost:${port}`,
+          localStorage: [{ name: 'castelo:install-dismissed-at', value: '99999999999999' }],
+        },
+      ],
+    },
   },
   projects: [
     {

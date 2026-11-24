@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import type { ProfileWire } from './wire';
 
 /**
@@ -85,21 +85,21 @@ export function fetchTransport(url: string, timeoutMs = 25_000): Transport {
 const ErrorSchema = z.object({
   code: z.string(),
   message: z.string(),
-  retryAfter: z.number().optional(),
+  retryAfter: z.optional(z.number()),
 });
 
 const EnvelopeSchema = z.object({
   ok: z.boolean(),
-  data: z.unknown().optional(),
-  error: ErrorSchema.optional(),
-  serverTime: z.number().optional(),
+  data: z.optional(z.unknown()),
+  error: z.optional(ErrorSchema),
+  serverTime: z.optional(z.number()),
 });
 
 export const RemoteRoomSchema = z.object({
   roomId: z.string(),
   data: z.string(),
   updatedAt: z.number(),
-  revision: z.number().int().min(0),
+  revision: z.int().check(z.minimum(0)),
   deviceId: z.string(),
 });
 export type RemoteRoom = z.infer<typeof RemoteRoomSchema>;
@@ -111,7 +111,7 @@ export const RemoteProfileSchema = z.object({
   conquistas: z.string(),
   configuracoes: z.string(),
   updatedAt: z.number(),
-  revision: z.number().int().min(0),
+  revision: z.int().check(z.minimum(0)),
 });
 export type RemoteProfile = z.infer<typeof RemoteProfileSchema>;
 
@@ -119,18 +119,19 @@ export const RemotePhotoSchema = z.object({
   photoId: z.string(),
   roomId: z.string(),
   createdAt: z.number(),
-  thumbnail: z.string(),
+  // Só imagens embutidas: nada de URLs externas ou esquemas estranhos.
+  thumbnail: z.string().check(z.regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/)),
 });
 export type RemotePhoto = z.infer<typeof RemotePhotoSchema>;
 
 const LoadSchema = z.object({
-  profile: RemoteProfileSchema.nullable(),
+  profile: z.nullable(RemoteProfileSchema),
   rooms: z.array(RemoteRoomSchema),
   album: z.array(RemotePhotoSchema),
 });
 export type LoadResult = z.infer<typeof LoadSchema>;
 
-const SavedSchema = z.object({ revision: z.number().int(), updatedAt: z.number() });
+const SavedSchema = z.object({ revision: z.int(), updatedAt: z.number() });
 const ConflictRoomSchema = z.object({ room: RemoteRoomSchema });
 const ConflictProfileSchema = z.object({ profile: RemoteProfileSchema });
 
@@ -160,7 +161,7 @@ export class SheetsApi {
   private async call<T>(
     action: string,
     payload: Record<string, unknown>,
-    schema: z.ZodType<T>,
+    schema: z.ZodMiniType<T>,
     keepalive = false,
   ): Promise<T> {
     const creds = this.credentials();

@@ -120,8 +120,10 @@ export function runTutorial(
     finish(true);
   });
   window.addEventListener('resize', place);
-  document.body.append(root);
   show();
+  document.body.append(root);
+  place();
+  next.focus({ preventScroll: true });
   return () => {
     finish(true);
   };

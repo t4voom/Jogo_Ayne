@@ -18,5 +18,6 @@ a substitui e o antigo é marcado como "Substituído por NNNN".
 | 0010 | [Arte vetorial por código](0010-arte-vetorial-por-codigo.md)                | Aceito |
 | 0011 | [Progressão que mescla entre aparelhos](0011-progressao-que-mescla.md)      | Aceito |
 | 0012 | [Áudio sintetizado e fotos no aparelho](0012-audio-e-fotos-sem-arquivos.md) | Aceito |
+| 0013 | [PWA, CSP e desempenho](0013-pwa-seguranca-e-desempenho.md)                 | Aceito |
 
 Modelo: [template.md](template.md)

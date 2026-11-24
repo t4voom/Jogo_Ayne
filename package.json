@@ -1,7 +1,7 @@
 {
   "name": "castelo-da-aynebrenda",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "O Castelo da Aynebrenda — jogo de decorar castelo de princesa (PWA offline-first).",
   "type": "module",
   "engines": {
@@ -22,7 +22,8 @@
     "test:e2e": "playwright test --trace off",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "prepare": "husky",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "splash": "node scripts/generate-splash.mjs"
   },
   "lint-staged": {
     "*.{ts,js,mjs,cjs}": [

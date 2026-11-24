@@ -167,6 +167,7 @@ export class StageView {
 
   private createNode(item: PlacedItem): ItemNode {
     const el = div('item');
+    el.setAttribute('role', 'img');
     el.dataset['uid'] = item.uid;
     el.dataset['itemId'] = item.itemId;
     const artEl = div('item-art');

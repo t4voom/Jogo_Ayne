@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import {
   AMBIENCES,
   COLOR_VARIANTS,
@@ -16,18 +16,18 @@ import {
  * schemas são verificados contra eles em tempo de compilação (ver `satisfies`).
  */
 
-const finite = z.number().refine(Number.isFinite, 'número inválido');
+const finite = z.number().check(z.refine(Number.isFinite, 'número inválido'));
 
 export const RoomIdSchema = z.enum(ROOM_IDS);
 export const ColorVariantSchema = z.enum(COLOR_VARIANTS);
 export const PaintColorSchema = z.enum(PAINT_COLORS);
 
 export const PlacedItemSchema = z.object({
-  uid: z.string().min(1).max(64),
-  itemId: z.string().min(1).max(64),
+  uid: z.string().check(z.minLength(1), z.maxLength(64)),
+  itemId: z.string().check(z.minLength(1), z.maxLength(64)),
   x: finite,
   y: finite,
-  w: finite.refine((v) => v > 0, 'largura deve ser positiva'),
+  w: z.number().check(z.refine((v) => Number.isFinite(v) && v > 0, 'largura deve ser positiva')),
   rot: finite,
   flip: z.boolean(),
   color: ColorVariantSchema,
@@ -55,9 +55,9 @@ export const RoomSchema = z.object({
   id: RoomIdSchema,
   decor: DecorSchema,
   ambience: z.enum(AMBIENCES),
-  items: z.array(PlacedItemSchema).max(500),
+  items: z.array(PlacedItemSchema).check(z.maxLength(500)),
   updatedAt: finite,
-  revision: z.number().int().min(0),
+  revision: z.int().check(z.minimum(0)),
 });
 
 // Garantia em tempo de compilação: o que o schema produz é um Room válido.

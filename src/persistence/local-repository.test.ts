@@ -1,6 +1,6 @@
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, describe, expect, it } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import { sequentialIds } from '../core/ids';
 import { LogHub } from '../core/log';
 import { createProfile } from '../core/profile';

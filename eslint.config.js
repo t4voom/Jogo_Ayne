@@ -128,6 +128,11 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node } },
   },
   {
+    // Scripts de ferramenta rodam trechos dentro do navegador (page.evaluate).
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     // Backend do Google Apps Script (JavaScript V8, escopo global compartilhado).
     files: ['apps-script/**/*.gs'],
     extends: [tseslint.configs.disableTypeChecked],

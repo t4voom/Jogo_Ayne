@@ -27,6 +27,7 @@ import { showFatalError } from './ui/fatal-error';
 import { installGlobalErrorHandlers } from './ui/global-errors';
 import { Haptics } from './ui/haptics';
 import { setupPwa } from './ui/pwa';
+import { captureInstallPrompt } from './ui/install-banner';
 import { installRewardFeedback } from './ui/reward-feedback';
 import { Router, type Route, type Screen } from './ui/router';
 import { createOpeningScreen } from './ui/screens/opening';
@@ -72,6 +73,7 @@ async function boot(): Promise<void> {
   const app = document.getElementById('app');
   if (!app) throw new Error('Elemento #app não encontrado');
 
+  captureInstallPrompt();
   const toast = new Toaster();
   installGlobalErrorHandlers(() => {
     toast.show('Ops! Algo deu errado, mas seu castelo está salvo 💕', { tone: 'warn' });

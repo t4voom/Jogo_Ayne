@@ -316,3 +316,21 @@
     flex-wrap: wrap;
   }
 }
+
+.map-lock-missing {
+  font-size: 12px;
+  font-weight: var(--fw-bold);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.map-lock.is-ready {
+  background: #fff8e1;
+  color: var(--c-gold-600);
+  box-shadow: var(--glow-gold), var(--shadow-md);
+  animation: ready-pulse 2s ease-in-out infinite;
+}
+
+.map-lock.is-ready .map-lock-missing {
+  color: var(--color-primary-strong);
+}

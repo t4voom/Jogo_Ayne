@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import { assertMigrationChain, migrate, type Json, type Migration } from './migrations';
 import type { Room } from './model';
 import type { Profile } from './profile';
@@ -42,22 +42,28 @@ export const SettingsSchema = z.object({
   snap: z.boolean(),
 });
 
-const CounterSchema = z.record(z.string().max(64), z.number().int().min(0));
-const DayKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const CounterSchema = z.record(z.string().check(z.maxLength(64)), z.int().check(z.minimum(0)));
+const DayKey = z.string().check(z.regex(/^\d{4}-\d{2}-\d{2}$/));
 
 export const ProfileSchema = z.object({
   settings: SettingsSchema,
   tutorialDone: z.boolean(),
   stars: z.object({ earned: CounterSchema, spent: CounterSchema }),
-  unlocked: z.array(z.string().max(64)).max(500),
-  missions: z.record(z.string().max(64), z.object({ done: z.boolean(), claimed: z.boolean() })),
-  achievements: z.record(z.string().max(64), z.number()),
-  daily: z.object({ lastDay: DayKey.nullable(), streak: z.number().int().min(0) }),
-  decorStars: z.object({ day: z.union([DayKey, z.literal('')]), count: z.number().int().min(0) }),
-  stats: z.record(z.string().max(64), CounterSchema),
+  unlocked: z.array(z.string().check(z.maxLength(64))).check(z.maxLength(500)),
+  missions: z.record(
+    z.string().check(z.maxLength(64)),
+    z.object({ done: z.boolean(), claimed: z.boolean() }),
+  ),
+  achievements: z.record(z.string().check(z.maxLength(64)), z.number()),
+  daily: z.object({ lastDay: z.nullable(DayKey), streak: z.int().check(z.minimum(0)) }),
+  decorStars: z.object({
+    day: z.union([DayKey, z.literal('')]),
+    count: z.int().check(z.minimum(0)),
+  }),
+  stats: z.record(z.string().check(z.maxLength(64)), CounterSchema),
   letterSeen: z.boolean(),
   updatedAt: z.number(),
-  revision: z.number().int().min(0),
+  revision: z.int().check(z.minimum(0)),
 });
 // Garantia em tempo de compilação: o schema produz um Profile válido.
 type Assert<T extends true> = T;

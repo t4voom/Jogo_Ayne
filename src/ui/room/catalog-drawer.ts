@@ -171,6 +171,11 @@ export class CatalogDrawer {
     if (this.tab === 'pintar' && !this.search.value) this.paint.update(this.o.getRoom());
   }
 
+  /** Redesenha a lista (ex.: depois de liberar um item). */
+  refreshItems(): void {
+    this.renderList();
+  }
+
   setSearching(on: boolean): void {
     this.el.classList.toggle('is-searching', on);
     if (on) {

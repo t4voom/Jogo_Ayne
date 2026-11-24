@@ -66,6 +66,8 @@ const TRANSITION_MS = 520;
 export class Router {
   private current: { route: Route; screen: Screen } | null = null;
   private token = 0;
+  /** Quantas entradas de histórico o próprio jogo empilhou (voltar só até elas). */
+  private depth = 0;
   private listeners = new Set<(route: Route) => void>();
 
   constructor(
@@ -91,7 +93,15 @@ export class Router {
         return;
       }
       const route = hashToRoute(location.hash) ?? { name: 'opening' };
+      this.depth = Math.max(0, this.depth - 1);
       void this.show(route);
+    });
+    // Mudança manual do # (ou links internos) sem passar pelo histórico.
+    window.addEventListener('hashchange', () => {
+      const route = hashToRoute(location.hash);
+      if (route && this.current && routeToHash(route) !== routeToHash(this.current.route)) {
+        void this.show(route);
+      }
     });
     const initial = hashToRoute(location.hash) ?? { name: 'opening' };
     history.replaceState(null, '', routeToHash(initial));
@@ -101,12 +111,16 @@ export class Router {
   go(route: Route, options: { replace?: boolean } = {}): Promise<void> {
     const hash = routeToHash(this.guard(route));
     if (options.replace) history.replaceState(null, '', hash);
-    else if (location.hash !== hash) history.pushState(null, '', hash);
+    else if (location.hash !== hash) {
+      history.pushState(null, '', hash);
+      this.depth++;
+    }
     return this.show(route);
   }
 
+  /** Volta uma tela; se não há tela anterior do jogo, vai para `fallback`. */
   back(fallback: Route): void {
-    if (history.length > 1 && this.current?.route.name !== 'opening') history.back();
+    if (this.depth > 0) history.back();
     else void this.go(fallback, { replace: true });
   }
 

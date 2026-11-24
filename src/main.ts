@@ -13,7 +13,8 @@ import { randomId } from './core/ids';
 import { createLogger, logHub } from './core/log';
 import type { Room, RoomId } from './core/model';
 import { createProfile } from './core/profile';
-import { createRoom, roomInfo } from './core/rooms';
+import { createRoom } from './core/rooms';
+import { Progression } from './app/progression';
 import { setupSync } from './app/sync-wiring';
 import { Autosaver } from './persistence/autosave';
 import { LocalRepository, requestPersistentStorage } from './persistence/local-repository';
@@ -24,6 +25,7 @@ import { showFatalError } from './ui/fatal-error';
 import { installGlobalErrorHandlers } from './ui/global-errors';
 import { Haptics } from './ui/haptics';
 import { setupPwa } from './ui/pwa';
+import { installRewardFeedback } from './ui/reward-feedback';
 import { Router, type Route, type Screen } from './ui/router';
 import { createOpeningScreen } from './ui/screens/opening';
 import { Toaster } from './ui/toast';
@@ -125,6 +127,8 @@ async function boot(): Promise<void> {
 
   // ----------------------------------------- sincronização com a planilha
   const cloud = await setupSync({ store, repo, toast, flushLocal: () => flushLocal() });
+  const progression = new Progression(store, () => cloud.deviceId);
+  progression.attach();
 
   // ------------------------------------------------------------- telas
   const ensureRoom = (roomId: RoomId): Room => {
@@ -134,7 +138,7 @@ async function boot(): Promise<void> {
     store.replaceRoom(room, 'load');
     return room;
   };
-  const isRoomUnlocked = (roomId: RoomId) => roomInfo(roomId).starter;
+  const isRoomUnlocked = (roomId: RoomId) => progression.isRoomUnlocked(roomId);
 
   let ctx: GameContext | null = null;
   const loadScreen = async (route: Route): Promise<Screen> => {
@@ -157,9 +161,12 @@ async function boot(): Promise<void> {
         const { createSettingsScreen } = await import('./ui/screens/settings');
         return createSettingsScreen(c);
       }
-      case 'map':
-      case 'album':
       case 'achievements': {
+        const { createAchievementsScreen } = await import('./ui/screens/achievements');
+        return createAchievementsScreen(c);
+      }
+      case 'map':
+      case 'album': {
         const { createMapScreen } = await import('./ui/screens/map');
         return createMapScreen(c);
       }
@@ -177,11 +184,14 @@ async function boot(): Promise<void> {
     router,
     newId: randomId,
     cloud,
+    progression,
     repo,
     ensureRoom,
     isRoomUnlocked,
   };
 
+  installRewardFeedback({ progression, toast, haptics, router });
+  progression.evaluate();
   await router.start();
   hideBootScreen();
 

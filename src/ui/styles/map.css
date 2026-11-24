@@ -273,3 +273,46 @@
     grid-column: 1;
   }
 }
+
+.map-room.is-unlocking .map-lock {
+  animation: lock-open 800ms var(--ease-back) forwards;
+}
+
+.map-room.is-unlocking .map-thumb {
+  filter: none;
+  opacity: 1;
+  transition:
+    filter 700ms,
+    opacity 700ms;
+}
+
+@keyframes lock-open {
+  30% {
+    transform: translate(-50%, -50%) scale(1.2) rotate(-8deg);
+  }
+  100% {
+    transform: translate(-50%, -80%) scale(0.4);
+    opacity: 0;
+  }
+}
+
+.map-top-actions .icon-btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+@media (max-width: 480px) {
+  .map-top {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .map-title {
+    text-align: left;
+  }
+
+  .map-top-actions {
+    grid-column: 1 / -1;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}

@@ -53,4 +53,30 @@ describe('save do perfil', () => {
     const p = createProfile(5);
     expect(parseProfile(JSON.parse(JSON.stringify(serializeProfile(p))))).toEqual(p);
   });
+
+  it('migra o perfil v1 (fase 3) para v2 sem perder as configurações', () => {
+    const v1 = {
+      schemaVersion: 1,
+      settings: { music: false, sfx: true, haptics: false, snap: true },
+      tutorialDone: true,
+      updatedAt: 123,
+      revision: 4,
+    };
+    const p = parseProfile(v1);
+    expect(p).toMatchObject({
+      settings: v1.settings,
+      tutorialDone: true,
+      revision: 4,
+      stars: { earned: {}, spent: {} },
+      unlocked: [],
+      daily: { lastDay: null, streak: 0 },
+      letterSeen: false,
+    });
+  });
+
+  it('recusa perfil com contador negativo ou dia inválido', () => {
+    const p = serializeProfile(createProfile(1));
+    expect(() => parseProfile({ ...p, stars: { earned: { a: -1 }, spent: {} } })).toThrow();
+    expect(() => parseProfile({ ...p, daily: { lastDay: 'ontem', streak: 0 } })).toThrow();
+  });
 });

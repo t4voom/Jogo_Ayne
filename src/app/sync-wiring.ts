@@ -1,6 +1,7 @@
 import { randomId } from '../core/ids';
 import { createLogger } from '../core/log';
 import { roomInfo } from '../core/rooms';
+import { balance } from '../progression/stars';
 import { Cloud } from '../persistence/cloud';
 import type { LocalRepository } from '../persistence/local-repository';
 import { SheetsApi, fetchTransport } from '../persistence/sheets-api';
@@ -63,7 +64,7 @@ export async function setupSync(deps: {
     applyRemoteProfile: (profile) => {
       store.updateProfile(() => profile, 'remote');
     },
-    starBalance: () => 0,
+    starBalance: (profile) => balance(profile),
     backup: async (kind, key, data) => {
       await repo?.addBackup({ kind, key, reason: 'conflict', data });
       await repo?.pruneBackups(6);

@@ -41,7 +41,8 @@ const LOOK: Record<
 export function createSyncIndicator(cloud: Cloud): { el: HTMLElement; destroy: () => void } {
   const button = h('button', { class: 'sync-pill', attrs: { type: 'button' } });
   const render = (s: SyncSnapshot) => {
-    if (s.status === 'disabled') {
+    // Sem planilha, ou jogando só neste aparelho (sem código): nada a mostrar.
+    if (s.status === 'disabled' || (s.status === 'needs-pin' && !cloud.hasPin)) {
       button.hidden = true;
       return;
     }

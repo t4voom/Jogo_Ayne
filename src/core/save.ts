@@ -10,13 +10,30 @@ import { RoomSchema } from './schema';
  */
 
 export const ROOM_SCHEMA_VERSION = 1;
-export const PROFILE_SCHEMA_VERSION = 1;
+export const PROFILE_SCHEMA_VERSION = 2;
 
 export const ROOM_MIGRATIONS: readonly Migration[] = [];
-export const PROFILE_MIGRATIONS: readonly Migration[] = [];
+export const PROFILE_MIGRATIONS: readonly Migration[] = [
+  {
+    from: 1,
+    to: 2,
+    description: 'Fase 5: estrelinhas, desbloqueios, missões, conquistas, presente diário',
+    up: (data) => ({
+      ...data,
+      stars: { earned: {}, spent: {} },
+      unlocked: [],
+      missions: {},
+      achievements: {},
+      daily: { lastDay: null, streak: 0 },
+      decorStars: { day: '', count: 0 },
+      stats: {},
+      letterSeen: false,
+    }),
+  },
+];
 
 assertMigrationChain(ROOM_MIGRATIONS, ROOM_SCHEMA_VERSION, ROOM_SCHEMA_VERSION);
-assertMigrationChain(PROFILE_MIGRATIONS, PROFILE_SCHEMA_VERSION, PROFILE_SCHEMA_VERSION);
+assertMigrationChain(PROFILE_MIGRATIONS, 1, PROFILE_SCHEMA_VERSION);
 
 export const SettingsSchema = z.object({
   music: z.boolean(),
@@ -25,9 +42,20 @@ export const SettingsSchema = z.object({
   snap: z.boolean(),
 });
 
+const CounterSchema = z.record(z.string().max(64), z.number().int().min(0));
+const DayKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
 export const ProfileSchema = z.object({
   settings: SettingsSchema,
   tutorialDone: z.boolean(),
+  stars: z.object({ earned: CounterSchema, spent: CounterSchema }),
+  unlocked: z.array(z.string().max(64)).max(500),
+  missions: z.record(z.string().max(64), z.object({ done: z.boolean(), claimed: z.boolean() })),
+  achievements: z.record(z.string().max(64), z.number()),
+  daily: z.object({ lastDay: DayKey.nullable(), streak: z.number().int().min(0) }),
+  decorStars: z.object({ day: z.union([DayKey, z.literal('')]), count: z.number().int().min(0) }),
+  stats: z.record(z.string().max(64), CounterSchema),
+  letterSeen: z.boolean(),
   updatedAt: z.number(),
   revision: z.number().int().min(0),
 });

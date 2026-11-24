@@ -16,5 +16,6 @@ a substitui e o antigo é marcado como "Substituído por NNNN".
 | 0008 | [Sincronização offline-first](0008-sincronizacao-offline-first.md)     | Aceito |
 | 0009 | [Segurança do backend](0009-seguranca-do-backend.md)                   | Aceito |
 | 0010 | [Arte vetorial por código](0010-arte-vetorial-por-codigo.md)           | Aceito |
+| 0011 | [Progressão que mescla entre aparelhos](0011-progressao-que-mescla.md) | Aceito |
 
 Modelo: [template.md](template.md)

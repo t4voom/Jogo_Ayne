@@ -1,4 +1,5 @@
 import type { ArtRegistry } from '../art/registry';
+import type { Progression } from '../app/progression';
 import type { IdGenerator } from '../core/ids';
 import type { Cloud } from '../persistence/cloud';
 import type { LocalRepository } from '../persistence/local-repository';
@@ -19,6 +20,7 @@ export interface GameContext {
   readonly router: Router;
   readonly newId: IdGenerator;
   readonly cloud: Cloud;
+  readonly progression: Progression;
   /** null quando o IndexedDB não está disponível (modo só memória). */
   readonly repo: LocalRepository | null;
   /** Garante que o cômodo existe no estado (cria com a decoração inicial). */

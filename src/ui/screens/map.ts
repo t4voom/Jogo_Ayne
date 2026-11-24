@@ -5,8 +5,13 @@ import { composeRoomSvg } from '../../render/compose';
 import type { GameContext } from '../context';
 import { h, icon, iconButton } from '../dom';
 import type { Screen } from '../router';
+import { confetti } from '../../fx/confetti';
+import { openDailyGift } from '../daily-gift';
+import { confirmSheet } from '../sheet';
+import { createStarsPill } from '../stars-pill';
 import { createSyncIndicator } from '../sync-indicator';
 import '../styles/map.css';
+import '../styles/progression.css';
 
 /** Ordem dos andares no corte do castelo (de cima para baixo). */
 const FLOORS: readonly (readonly RoomId[])[] = [
@@ -42,12 +47,27 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
             if (unlocked) {
               ctx.haptics.play('light');
               void ctx.router.go({ name: 'room', roomId });
+            } else if (ctx.progression.stars >= info.cost) {
+              void confirmSheet({
+                title: `Abrir ${info.name}?`,
+                message: `Usar ${info.cost} estrelinhas para abrir este cômodo. Você tem ${ctx.progression.stars} ⭐`,
+                confirm: `Abrir por ${info.cost} ⭐`,
+              }).then((ok) => {
+                if (!ok || !ctx.progression.unlockRoom(roomId)) return;
+                ctx.haptics.play('success');
+                confetti();
+                card.classList.add('is-unlocking');
+                window.setTimeout(() => {
+                  void ctx.router.go({ name: 'room', roomId });
+                }, 900);
+              });
             } else {
               ctx.haptics.play('medium');
               card.classList.remove('is-shaking');
               void card.getBoundingClientRect();
               card.classList.add('is-shaking');
-              ctx.toast.show(`Faltam ${info.cost} estrelinhas para abrir ${info.name} ⭐`, {
+              const missing = info.cost - ctx.progression.stars;
+              ctx.toast.show(`Faltam ${missing} estrelinhas para abrir ${info.name} ⭐`, {
                 icon: 'lock',
               });
             }
@@ -79,6 +99,27 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
   };
 
   const sync = createSyncIndicator(ctx.cloud);
+  const pill = createStarsPill(ctx.store, ctx.progression, () => {
+    void ctx.router.go({ name: 'achievements' });
+  });
+  const gift = iconButton(
+    'gift',
+    'Presente do dia',
+    () => {
+      if (ctx.progression.dailyAvailable) {
+        openDailyGift(ctx.progression, refreshGift);
+      } else {
+        ctx.toast.show('O baú de hoje já foi aberto. Volte amanhã para outro presente! 🎁', {
+          icon: 'gift',
+        });
+      }
+    },
+    { className: 'gift-btn' },
+  );
+  const refreshGift = () => {
+    gift.classList.toggle('is-available', ctx.progression.dailyAvailable);
+  };
+  refreshGift();
   const header = h(
     'header',
     { class: 'map-top' },
@@ -90,6 +131,11 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
       'div',
       { class: 'map-top-actions' },
       sync.el,
+      pill.el,
+      gift,
+      iconButton('trophy', 'Conquistas e missões', () => {
+        void ctx.router.go({ name: 'achievements' });
+      }),
       iconButton('gear', 'Configurações', () => {
         void ctx.router.go({ name: 'settings' });
       }),
@@ -134,6 +180,7 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
     el,
     destroy() {
       sync.destroy();
+      pill.destroy();
       el.remove();
     },
   };

@@ -6,6 +6,27 @@ Todas as mudanças relevantes do projeto. Formato baseado em
 
 ## [Não lançado]
 
+### Fase 5 — Progressão
+
+- Perfil v2 com migração do v1: estrelinhas por aparelho (nunca se perdem na
+  sincronização), desbloqueios, missões, conquistas, presente diário e
+  estatísticas, tudo mesclável entre tablet e celular.
+- Estrelinhas: +1 por item colocado (até 12 por dia), missões, medalhas e o
+  presente diário.
+- Cômodos e itens bloqueados liberados com estrelinhas (com confirmação e
+  animação do cadeado abrindo).
+- Baú surpresa diário (boas-vindas de 15 ⭐, bônus de dias seguidos e item
+  surpresa a cada 5 presentes).
+- 17 missões curtas (3 ativas por vez) e 15 conquistas com medalhas
+  ilustradas.
+- Mensagens carinhosas rotativas (`src/content/mensagens.ts`).
+- Carta surpresa animada ao completar todas as conquistas — texto em
+  `src/content/carta.ts` (placeholder para o Gustavo escrever).
+- Correções: "voltar" nunca sai do jogo quando ele foi aberto direto num
+  cômodo; o aviso do código do castelo some quando ela joga só no aparelho.
+- ADR 0011; testes de unidade da progressão e e2e de presente, desbloqueio e
+  missão.
+
 ### Fase 4 — Conteúdo
 
 - **101 itens** com arte SVG própria, em 6 cores cada:

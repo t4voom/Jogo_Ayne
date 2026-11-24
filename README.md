@@ -127,6 +127,15 @@ tests/e2e/      testes Playwright
 As decisões estão em [`docs/adr/`](docs/adr/README.md) e as mudanças no
 [`CHANGELOG.md`](CHANGELOG.md).
 
+## A carta surpresa 💌
+
+Quando a Ayne completar **todas as conquistas**, abre uma carta animada.
+O texto fica em [`src/content/carta.ts`](src/content/carta.ts): troque o
+título, os parágrafos e a assinatura e mude `PLACEHOLDER` para `false`.
+(O repositório é público, então o texto fica visível no GitHub.) As mensagens
+carinhosas que aparecem durante o jogo ficam em
+[`src/content/mensagens.ts`](src/content/mensagens.ts).
+
 ---
 
 Feito com 💖 pelo Gustavo.

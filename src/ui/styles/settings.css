@@ -16,15 +16,6 @@
   grid-template-columns: minmax(0, 640px);
 }
 
-.set-title {
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-black);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-soft);
-  margin: 0 0 var(--space-2) var(--space-2);
-}
-
 .set-card {
   display: grid;
   gap: var(--space-1);
@@ -87,12 +78,6 @@
   margin: var(--space-2);
   min-height: 48px;
   font-size: var(--fs-md);
-}
-
-.set-note {
-  padding: var(--space-3);
-  color: var(--color-text-muted);
-  font-size: var(--fs-sm);
 }
 
 /* ------------------------------------------------------- switch */

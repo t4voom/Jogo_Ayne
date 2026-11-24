@@ -15,7 +15,10 @@ import { CatalogDrawer } from '../room/catalog-drawer';
 import { ItemToolbar, type ItemCommands } from '../room/item-toolbar';
 import { openQuickMenu } from '../room/quick-menu';
 import type { Screen } from '../router';
+import { confirmSheet } from '../sheet';
+import { createStarsPill } from '../stars-pill';
 import { createSyncIndicator } from '../sync-indicator';
+import '../styles/progression.css';
 import '../styles/room.css';
 
 export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promise<Screen> {
@@ -43,6 +46,8 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
   const sync = createSyncIndicator(ctx.cloud);
   cleanups.push(sync.destroy);
   const syncSlot = h('div', { class: 'room-sync-slot' }, sync.el);
+  const pill = createStarsPill(ctx.store, ctx.progression);
+  cleanups.push(pill.destroy);
   const top = h(
     'header',
     { class: 'room-top' },
@@ -59,6 +64,7 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
     h(
       'div',
       { class: 'room-actions' },
+      pill.el,
       undoBtn,
       redoBtn,
       iconButton('eye', 'Modo ver: esconder os botões', () => setViewing(true)),
@@ -196,9 +202,26 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
     },
     isOverStage,
     ghostWidth: (item) => (item.width / 100) * stage.pixelSize,
-    isUnlocked: (item) => item.cost === 0,
+    isUnlocked: (item) => ctx.progression.isItemUnlocked(item),
     onLockedPick: (item) => {
-      ctx.toast.show(`${item.name} abre com ${item.cost} estrelinhas ⭐`, { icon: 'lock' });
+      const have = ctx.progression.stars;
+      if (have < item.cost) {
+        ctx.toast.show(
+          `${item.name} abre com ${item.cost} ⭐ — faltam ${item.cost - have}. Missões e o presente do dia dão estrelinhas!`,
+          { icon: 'lock' },
+        );
+        return;
+      }
+      void confirmSheet({
+        title: `Liberar ${item.name}?`,
+        message: `Usar ${item.cost} estrelinhas. Você tem ${have} ⭐`,
+        confirm: `Liberar por ${item.cost} ⭐`,
+      }).then((ok) => {
+        if (!ok || !ctx.progression.unlockItem(item)) return;
+        ctx.haptics.play('success');
+        drawer.refreshItems();
+        addItem(item);
+      });
     },
     onPaint: (patch) => {
       if (ctx.actions.paint(roomId, patch)) ctx.haptics.play('light');

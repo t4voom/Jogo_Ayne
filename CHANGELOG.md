@@ -6,6 +6,29 @@ Todas as mudanças relevantes do projeto. Formato baseado em
 
 ## [Não lançado]
 
+### Fase 4 — Conteúdo
+
+- **101 itens** com arte SVG própria, em 6 cores cada:
+  - 29 móveis: berço, guarda-roupa, cômoda, sofá real, divã, mesa de chá,
+    cadeira de coração, estante, banheira com pés, pia, armário de cozinha,
+    fogão antigo, geladeira retrô, mesa de jantar, piano de cauda, harpa,
+    cabideiro, sapateira, manequim com vestido, lareira…
+  - 28 de decoração: retrato, quadros, tapetes (redondo, retangular, coração),
+    velas, baú de tesouro, relógio de pêndulo, laço, guirlanda de luzes, bolo,
+    jogo de chá, porta-joias, caixinha de música com bailarina, globo de neve,
+    livros, almofadas, cortina, prateleira, espelho de corpo inteiro, vitral,
+    bandeja de docinhos…
+  - 14 plantas, 12 bichinhos (gatinho, cachorrinho, coelho, unicórnio, pônei,
+    cisne, borboletas, passarinho, aquário, ouriço, coruja, patinho) e 18
+    externos (torre, bandeirolas, ponte, lago com cisnes, cerca, portão,
+    carruagem de abóbora, poste de luz, banco, balanço, arco-íris, nuvem, lua,
+    estrelas, sol, casinha de passarinho, poço dos desejos, fonte).
+- Animações sutis: respirar, piscar, rabinho, chamas, água, pêndulo,
+  bailarina, bolhas, borboletas, peixinhos, bandeiras, pétalas caindo.
+- Os 8 cômodos com decoração e itens iniciais próprios.
+- Catálogo mostra primeiro os itens sugeridos para o cômodo atual.
+- Testes de integridade da arte; ADR 0010.
+
 ### Fase 3 — Planilha e sincronização
 
 - `apps-script/Code.gs` completo: `setup()`, `doGet` (ping) e `doPost`

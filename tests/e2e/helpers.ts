@@ -30,6 +30,8 @@ export function items(page: Page) {
 
 /** Centro (em px de tela) de um item do palco. */
 export async function centerOf(page: Page, selector: string): Promise<Pt> {
+  // Espera o desenho do item carregar (a arte vem em pedaços sob demanda).
+  await page.locator(`${selector} svg`).first().waitFor({ state: 'visible' });
   const box = await page.locator(selector).boundingBox();
   if (!box) throw new Error(`sem caixa para ${selector}`);
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
@@ -45,6 +47,10 @@ export async function touchGesture(page: Page, paths: Pt[][], steps = 8): Promis
       const stage = document.querySelector('.stage');
       if (!stage) throw new Error('sem palco');
       const frame = () => new Promise((r) => requestAnimationFrame(() => r(null)));
+      // Entre os passos, um intervalo curto de relógio (não de quadro): no WebKit
+      // do CI um quadro pode demorar centenas de ms e o "toque longo" (480 ms)
+      // dispararia antes do dedo "andar" — um dedo de verdade é bem mais rápido.
+      const tick = () => new Promise((r) => setTimeout(r, 12));
       const fire = (type: string, id: number, p: { x: number; y: number }) => {
         stage.dispatchEvent(
           new PointerEvent(type, {
@@ -69,10 +75,10 @@ export async function touchGesture(page: Page, paths: Pt[][], steps = 8): Promis
         return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
       };
       paths.forEach((path, k) => fire('pointerdown', k + 1, path[0]!));
-      await frame();
+      await tick();
       for (let s = 1; s <= steps; s++) {
         paths.forEach((path, k) => fire('pointermove', k + 1, at(path, s / steps)));
-        await frame();
+        await tick();
       }
       paths.forEach((path, k) => fire('pointerup', k + 1, path[path.length - 1]!));
       await frame();

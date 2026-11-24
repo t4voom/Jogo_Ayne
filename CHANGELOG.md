@@ -30,7 +30,8 @@ Primeira versão completa, presente para a Ayne. 👑
   configurações.
 - Álbum: botão de câmera com flash gera um PNG do cômodo com moldura de
   princesa; fotos ficam no aparelho, a miniatura sincroniza com a planilha;
-  visualizador com Compartilhar (Web Share), Baixar e Apagar.
+  visualizador com Compartilhar (Web Share), Baixar e Apagar. As fotos ficam
+  no IndexedDB como bytes (funciona até no Safari em navegação privada).
 - Tutorial da Fadinha Luz na primeira visita (4 passos, com destaque na tela,
   pode pular).
 - Noite e entardecer: lustres, abajures, velas, castiçais, lareira, poste e

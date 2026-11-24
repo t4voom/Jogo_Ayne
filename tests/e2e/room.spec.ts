@@ -110,6 +110,7 @@ test.describe('cômodo', () => {
     await openRoom(page);
     await page.getByRole('button', { name: 'Adicionar Criado-mudo' }).click({ force: true });
     const sel = '.stage-items .item[data-item-id="criado-mudo"]';
+    await page.waitForTimeout(700); // termina a animação de "pop"
     const start = await centerOf(page, sel);
     const stage = (await page.locator('.stage').boundingBox())!;
     await touchGesture(page, [[start, { x: start.x, y: stage.y + stage.height + 120 }]]);

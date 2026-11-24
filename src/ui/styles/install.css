@@ -1,0 +1,100 @@
+.install-banner {
+  position: fixed;
+  z-index: var(--z-toast);
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + var(--space-4));
+  transform: translateX(-50%);
+  width: min(520px, calc(100vw - 24px));
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  animation: sheet-in var(--dur-slow) var(--ease-back) both;
+}
+
+.install-banner.is-leaving {
+  animation: fade-out 240ms ease both;
+}
+
+.install-crown {
+  font-size: 30px;
+}
+
+.install-text {
+  display: grid;
+  line-height: 1.2;
+}
+
+.install-text strong {
+  font-weight: var(--fw-black);
+  font-size: var(--fs-sm);
+}
+
+.install-text small {
+  font-size: 12px;
+  color: var(--color-text-soft);
+}
+
+.install-go {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  font-size: var(--fs-md);
+}
+
+.install-close {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+}
+
+.install-list {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.install-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-md);
+  color: var(--color-text);
+}
+
+.install-num {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-primary-strong);
+  color: #fff;
+  font-weight: var(--fw-black);
+  font-size: var(--fs-sm);
+  flex: none;
+}
+
+.install-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px 2px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--c-sky-100);
+  color: #1c6fd1;
+  font-weight: var(--fw-bold);
+}
+
+.install-chip .icon {
+  width: 18px;
+  height: 18px;
+}

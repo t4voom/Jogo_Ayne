@@ -1,0 +1,160 @@
+.tutorial {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  animation: fade-in var(--dur-slow) var(--ease-soft) both;
+}
+
+.tutorial.is-leaving {
+  animation: fade-out 260ms ease both;
+}
+
+.tut-spot {
+  position: fixed;
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 0 0 4px rgb(255 255 255 / 85%),
+    0 0 0 9999px rgb(74 35 65 / 52%);
+  transition:
+    left var(--dur-slow) var(--ease-soft),
+    top var(--dur-slow) var(--ease-soft),
+    width var(--dur-slow) var(--ease-soft),
+    height var(--dur-slow) var(--ease-soft);
+  pointer-events: none;
+  animation: spot-pulse 2s ease-in-out infinite;
+}
+
+.tut-spot.is-hidden {
+  left: 50% !important;
+  top: 50% !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+@keyframes spot-pulse {
+  50% {
+    box-shadow:
+      0 0 0 8px rgb(255 255 255 / 60%),
+      0 0 0 9999px rgb(74 35 65 / 52%);
+  }
+}
+
+.tut-card {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(440px, calc(100vw - 32px));
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: end;
+  gap: var(--space-2);
+}
+
+.tut-card.at-bottom {
+  top: auto;
+  bottom: calc(var(--safe-bottom) + var(--space-6));
+  transform: translateX(-50%);
+}
+
+.tut-card.at-top {
+  top: calc(var(--safe-top) + var(--space-6));
+  transform: translateX(-50%);
+}
+
+.tut-card.is-changing .tut-bubble {
+  animation: sheet-in var(--dur-slow) var(--ease-back) both;
+}
+
+.tut-fairy {
+  width: 96px;
+  height: 108px;
+  animation: crown-float 2.6s ease-in-out infinite;
+}
+
+.tut-fairy svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.fairy-wings {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: wings 0.5s ease-in-out infinite alternate;
+}
+
+.fairy-star {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: twinkle 1.6s ease-in-out infinite;
+}
+
+.fairy-blink {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: blink 4s ease-in-out infinite;
+}
+
+@keyframes wings {
+  to {
+    transform: scaleX(0.86);
+  }
+}
+
+.tut-bubble {
+  position: relative;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) 6px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.tut-text {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+  line-height: 1.35;
+}
+
+.tut-dots {
+  display: flex;
+  gap: 6px;
+  margin: var(--space-3) 0;
+}
+
+.tut-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c-rose-200);
+  transition: width var(--dur) var(--ease-soft);
+}
+
+.tut-dots span.is-on {
+  width: 22px;
+  border-radius: 4px;
+  background: var(--color-primary-strong);
+}
+
+.tut-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tut-next {
+  min-height: 48px;
+  font-size: var(--fs-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tut-fairy,
+  .fairy-wings,
+  .fairy-star,
+  .fairy-blink,
+  .tut-spot {
+    animation: none !important;
+  }
+}

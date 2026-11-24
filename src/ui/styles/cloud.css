@@ -1,0 +1,248 @@
+/* -------------------------------------------------- folhas (modais) */
+.sheet-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  color: var(--color-primary-strong);
+  text-align: center;
+  line-height: 1.1;
+  margin-bottom: var(--space-2);
+}
+
+.sheet-text {
+  text-align: center;
+  color: var(--color-text-soft);
+  margin-bottom: var(--space-4);
+}
+
+.sheet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+/* --------------------------------------------------------- PIN */
+.pin {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+}
+
+.pin.is-shaking {
+  animation: map-shake 420ms ease-in-out;
+}
+
+.pin-art {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0, var(--c-rose-100) 60%, var(--c-lilac-100));
+  box-shadow: var(--shadow-md);
+  color: var(--color-primary-strong);
+  margin-bottom: var(--space-2);
+}
+
+.pin-castle {
+  width: 52px;
+  height: 52px;
+}
+
+.pin-key {
+  position: absolute;
+  right: 4px;
+  bottom: 6px;
+  width: 34px;
+  height: 34px;
+  padding: 6px;
+  border-radius: 50%;
+  background: var(--c-gold-300);
+  color: var(--c-plum-800);
+  box-shadow: var(--shadow-sm);
+  animation: key-wiggle 2.6s ease-in-out infinite;
+}
+
+@keyframes key-wiggle {
+  50% {
+    transform: rotate(-18deg);
+  }
+}
+
+.pin-field {
+  position: relative;
+  width: min(300px, 100%);
+}
+
+.pin-input {
+  width: 100%;
+  min-height: 60px;
+  padding: 0 56px 0 var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 2.5px solid var(--c-rose-200);
+  background: var(--c-rose-50);
+  font-size: 28px;
+  font-weight: var(--fw-black);
+  letter-spacing: 0.3em;
+  text-align: center;
+  color: var(--color-text);
+  outline: none;
+  transition: border-color var(--dur-fast);
+}
+
+.pin-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgb(232 110 168 / 18%);
+}
+
+.pin-eye {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+}
+
+.pin-error {
+  min-height: 1.4em;
+  color: var(--color-danger);
+  font-weight: var(--fw-bold);
+  text-align: center;
+}
+
+.pin-submit {
+  min-width: 220px;
+}
+
+.btn.is-busy .icon {
+  animation: spin 1s linear infinite;
+}
+
+/* -------------------------------------------------- indicador */
+.sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  min-width: 44px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-glass);
+  border: 1.5px solid rgb(255 255 255 / 85%);
+  box-shadow: var(--shadow-xs);
+  color: var(--color-success);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+  justify-content: center;
+}
+
+.sync-pill[hidden] {
+  display: none;
+}
+
+.sync-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.sync-pill[data-status='syncing'] {
+  color: var(--c-lilac-600);
+}
+
+.sync-pill[data-status='syncing'] .sync-icon {
+  animation: spin 1.2s linear infinite;
+}
+
+.sync-pill[data-status='offline'] {
+  color: var(--color-text-muted);
+}
+
+.sync-pill[data-status='error'],
+.sync-pill[data-status='needs-pin'] {
+  color: var(--c-gold-600);
+  background: var(--c-gold-100);
+}
+
+@media (max-width: 520px) {
+  .sync-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .sync-pill {
+    padding: 0;
+    width: 44px;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------------------------------------------- detalhes do sync */
+.sync-details {
+  display: grid;
+  justify-items: center;
+}
+
+.sync-hero {
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--c-mint-100);
+  color: var(--color-success);
+  margin-bottom: var(--space-3);
+}
+
+.sync-hero .icon {
+  width: 40px;
+  height: 40px;
+}
+
+.sync-hero.is-syncing {
+  background: var(--c-lilac-100);
+  color: var(--c-lilac-600);
+}
+
+.sync-hero.is-syncing .icon {
+  animation: spin 1.2s linear infinite;
+}
+
+.sync-hero.is-offline {
+  background: var(--c-pearl-200);
+  color: var(--color-text-muted);
+}
+
+.sync-hero.is-error,
+.sync-hero.is-needs-pin {
+  background: var(--c-gold-100);
+  color: var(--c-gold-600);
+}
+
+.sync-meta {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.sync-error {
+  margin-top: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--color-danger);
+  text-align: center;
+}

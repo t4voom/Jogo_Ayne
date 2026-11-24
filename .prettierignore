@@ -1,0 +1,10 @@
+dist
+dist-e2e
+dev-dist
+coverage
+playwright-report
+test-results
+node_modules
+package-lock.json
+public/icons
+CHANGELOG.md

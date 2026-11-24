@@ -917,8 +917,32 @@
   }
 }
 
-@media (max-width: 380px) {
+@media (max-width: 560px) {
+  .room-top {
+    gap: 4px;
+    padding-left: calc(var(--safe-left) + var(--space-2));
+    padding-right: calc(var(--safe-right) + var(--space-2));
+  }
+
+  .room-actions {
+    gap: 4px;
+  }
+
+  .room-title {
+    font-size: var(--fs-xl);
+  }
+
+  /* Some da tela, mas continua no título para leitores de tela. */
   .room-name {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .room-top .stars-pill {
+    padding: 0 10px 0 6px;
   }
 }

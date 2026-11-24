@@ -19,6 +19,7 @@ import { confirmSheet } from '../sheet';
 import { createStarsPill } from '../stars-pill';
 import { createSyncIndicator } from '../sync-indicator';
 import '../styles/progression.css';
+import '../styles/album.css';
 import '../styles/room.css';
 
 export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promise<Screen> {
@@ -38,10 +39,12 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
   const undoBtn = iconButton('undo', 'Desfazer', () => {
     ctx.store.undo(roomId);
     ctx.haptics.play('light');
+    ctx.sound.play('tick');
   });
   const redoBtn = iconButton('redo', 'Refazer', () => {
     ctx.store.redo(roomId);
     ctx.haptics.play('light');
+    ctx.sound.play('tick');
   });
   const sync = createSyncIndicator(ctx.cloud);
   cleanups.push(sync.destroy);
@@ -67,6 +70,9 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
       pill.el,
       undoBtn,
       redoBtn,
+      iconButton('camera', 'Tirar foto do cômodo', () => {
+        void takePhoto();
+      }),
       iconButton('eye', 'Modo ver: esconder os botões', () => setViewing(true)),
     ),
   );
@@ -108,6 +114,7 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
         if (ok && item) {
           const p = screenPoint(item);
           sparkleBurst(p.x, p.y, { count: 10, spread: 60 });
+          ctx.sound.play('sparkle');
         }
         return ok;
       }),
@@ -128,6 +135,7 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
     const ok = ctx.actions.remove(roomId, uid);
     if (ok) {
       poof(p.x, p.y);
+      ctx.sound.play('whoosh');
       ctx.toast.show('Item guardado de volta no baú', {
         icon: 'trash',
         action: {
@@ -185,6 +193,7 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
     }
     ctx.store.select({ roomId, uid: placed.uid });
     ctx.haptics.play('light');
+    ctx.sound.play('pop');
     const p = screenPoint(placed);
     sparkleBurst(p.x, p.y);
   }
@@ -219,21 +228,69 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
       }).then((ok) => {
         if (!ok || !ctx.progression.unlockItem(item)) return;
         ctx.haptics.play('success');
+        ctx.sound.play('unlock');
         drawer.refreshItems();
         addItem(item);
       });
     },
     onPaint: (patch) => {
-      if (ctx.actions.paint(roomId, patch)) ctx.haptics.play('light');
+      if (ctx.actions.paint(roomId, patch)) {
+        ctx.haptics.play('light');
+        ctx.sound.play('swish');
+      }
     },
     onAmbience: (a) => {
-      if (ctx.actions.setAmbience(roomId, a)) ctx.haptics.play('light');
+      if (ctx.actions.setAmbience(roomId, a)) {
+        ctx.haptics.play('light');
+        ctx.sound.play(a === 'noite' ? 'bell' : 'swish');
+      }
     },
   });
 
   function isOverStage(x: number, y: number): boolean {
     const r = stage.el.getBoundingClientRect();
     return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  }
+
+  // --------------------------------------------------------------- foto
+  let shooting = false;
+  async function takePhoto(): Promise<void> {
+    if (shooting) return;
+    shooting = true;
+    ctx.store.select(null);
+    document.body.append(h('div', { class: 'camera-flash', attrs: { 'aria-hidden': 'true' } }));
+    window.setTimeout(() => document.querySelector('.camera-flash')?.remove(), 700);
+    ctx.sound.play('shutter');
+    ctx.haptics.play('medium');
+    try {
+      const { capturePhoto } = await import('../../render/photo');
+      const shot = await capturePhoto(room(), info.name, ctx.art, getItem, new Date());
+      const id = ctx.newId();
+      await ctx.photos.save({
+        id,
+        roomId,
+        createdAt: Date.now(),
+        image: shot.image,
+        thumbnail: shot.thumbnail,
+      });
+      ctx.cloud.engine.markPhotoDirty(id);
+      ctx.progression.count('photos');
+      ctx.toast.show('Foto guardada no álbum 📸', {
+        icon: 'camera',
+        tone: 'love',
+        action: {
+          label: 'Ver',
+          run: () => {
+            void ctx.router.go({ name: 'album' });
+          },
+        },
+      });
+    } catch (error) {
+      ctx.toast.show('Não consegui tirar a foto agora 😢', { tone: 'warn' });
+      throw error;
+    } finally {
+      shooting = false;
+    }
   }
 
   // ------------------------------------------------------------- gestos
@@ -257,6 +314,7 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
       });
     },
     lockedTouch: () => {
+      ctx.sound.play('error');
       ctx.toast.show('Este item está travadinho 🔒 Toque em “Destravar” para mexer.', {
         icon: 'lock',
       });
@@ -382,6 +440,38 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
       cleanups.push(gestures.attach());
       syncSelection();
       syncHistory();
+      if (!ctx.store.getState().profile.tutorialDone) {
+        window.setTimeout(() => {
+          void import('../tutorial').then(({ runTutorial }) => {
+            const stop = runTutorial(
+              [
+                {
+                  text: 'Oi, Princesa Ayne! Eu sou a Fadinha Luz ✨ Toque num item do catálogo para ele aparecer no cômodo.',
+                  target: () => el.querySelector('.drawer-list'),
+                },
+                {
+                  text: 'Arraste com um dedo para mudar o item de lugar. Para tirar, é só arrastar até a lixeira 🗑️',
+                  target: () => stage.el,
+                },
+                {
+                  text: 'Com dois dedos, faça pinça para aumentar, diminuir e até girar o item 🤏 Segurar o dedo num item abre um menu rapidinho.',
+                  target: () => stage.el,
+                },
+                {
+                  text: 'Na aba Pintar você troca a cor e o padrão da parede e do chão, e transforma o dia em noite 🎨🌙',
+                  target: () => el.querySelector('[data-tab="pintar"]'),
+                },
+              ],
+              {
+                onFinish: () => {
+                  ctx.store.updateProfile((p) => ({ ...p, tutorialDone: true }));
+                },
+              },
+            );
+            cleanups.push(stop);
+          });
+        }, 500);
+      }
     },
     back() {
       if (closeMenu && document.querySelector('.quick-menu')) {

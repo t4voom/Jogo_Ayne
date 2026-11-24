@@ -202,6 +202,7 @@ const laco: ItemArt = {
 const guirlanda: ItemArt = {
   w: 300,
   h: 100,
+  light: { x: 150, y: 60, r: 170 },
   draw: ({ ramp: c }) => {
     const colors = [c.base, '#fff1a8', '#c8b0f0', '#9fd3f2', '#f9b8d4', '#a6e2c4'];
     let bulbs = '';

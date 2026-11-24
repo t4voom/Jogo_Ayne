@@ -18,6 +18,7 @@
 .stage-bg,
 .stage-items,
 .stage-tint,
+.stage-lights,
 .stage-overlay {
   position: absolute;
   inset: 0;
@@ -51,6 +52,53 @@
 
 .stage[data-kind='exterior'][data-ambience='noite'] .stage-tint {
   background: rgb(96 92 178 / 30%);
+}
+
+.stage-lights {
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-soft);
+  mix-blend-mode: screen;
+}
+
+.stage[data-ambience='entardecer'] .stage-lights {
+  opacity: 0.45;
+}
+
+.stage[data-ambience='noite'] .stage-lights {
+  opacity: 1;
+}
+
+.stage-light {
+  position: absolute;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(255 236 170 / 85%) 0,
+    rgb(255 214 140 / 45%) 30%,
+    rgb(255 190 120 / 12%) 60%,
+    transparent 72%
+  );
+}
+
+.stage-light.is-flicker {
+  animation: light-flicker 2.4s ease-in-out infinite;
+}
+
+@keyframes light-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.86;
+  }
+  70% {
+    opacity: 0.95;
+  }
 }
 
 .stage-overlay {

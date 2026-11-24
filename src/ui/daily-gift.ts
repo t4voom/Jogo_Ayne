@@ -21,7 +21,11 @@ const CHEST = `<svg viewBox="0 0 200 170" aria-hidden="true" focusable="false">
 </svg>`;
 
 /** Baú surpresa do dia: toca para abrir, chovem estrelinhas. */
-export function openDailyGift(progression: Progression, onDone?: () => void): void {
+export function openDailyGift(
+  progression: Progression,
+  onDone?: () => void,
+  onOpen?: () => void,
+): void {
   openSheet(
     (close) => {
       const chest = h('button', {
@@ -41,6 +45,7 @@ export function openDailyGift(progression: Progression, onDone?: () => void): vo
             return;
           }
           chest.classList.add('is-open');
+          onOpen?.();
           chest.disabled = true;
           confetti();
           const item = reward.itemId ? getItem(reward.itemId) : undefined;

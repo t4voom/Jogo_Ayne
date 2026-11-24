@@ -1,0 +1,134 @@
+.album-screen {
+  height: 100%;
+  background:
+    radial-gradient(circle at 80% 0%, rgb(255 255 255 / 80%), transparent 40%),
+    linear-gradient(180deg, var(--c-lilac-50), var(--c-rose-50));
+}
+
+.album-count {
+  font-weight: var(--fw-bold);
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+.album-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-4) calc(var(--safe-right) + var(--space-4))
+    calc(var(--safe-bottom) + var(--space-10)) calc(var(--safe-left) + var(--space-4));
+}
+
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-5);
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.album-photo {
+  display: grid;
+  gap: 6px;
+  padding: 10px 10px 12px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: var(--shadow-md);
+  transform: rotate(var(--tilt));
+  transition: transform var(--dur) var(--ease-back);
+}
+
+.album-photo:active {
+  transform: rotate(0) scale(0.96);
+}
+
+.album-photo img {
+  width: 100%;
+  aspect-ratio: 1080 / 1280;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--c-rose-100);
+}
+
+.album-label {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  color: var(--color-primary-strong);
+}
+
+.album-empty {
+  grid-column: 1 / -1;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-10) var(--space-4);
+  text-align: center;
+  color: var(--color-text-soft);
+}
+
+.album-empty-icon {
+  width: 88px;
+  height: 88px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--c-rose-100);
+  color: var(--color-primary-strong);
+}
+
+.album-empty-icon .icon {
+  width: 44px;
+  height: 44px;
+}
+
+.viewer {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+}
+
+.viewer-img {
+  max-width: 100%;
+  max-height: 62vh;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.viewer-caption {
+  font-weight: var(--fw-bold);
+  color: var(--color-text-soft);
+}
+
+.viewer-note {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* ------------------------------------------------------ flash da câmera */
+.camera-flash {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-fx);
+  background: #fff;
+  pointer-events: none;
+  animation: flash 650ms var(--ease-soft) both;
+}
+
+@keyframes flash {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .camera-flash {
+    animation-duration: 1ms;
+  }
+}

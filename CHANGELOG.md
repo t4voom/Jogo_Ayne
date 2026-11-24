@@ -6,6 +6,21 @@ Todas as mudanças relevantes do projeto. Formato baseado em
 
 ## [Não lançado]
 
+### Fase 6 — Álbum, áudio, tutorial, dia/noite e polimento
+
+- Caixinha de música com melodia original e efeitos sonoros, tudo em Web
+  Audio (sem arquivos), começando no primeiro toque e respeitando as
+  configurações.
+- Álbum: botão de câmera com flash gera um PNG do cômodo com moldura de
+  princesa; fotos ficam no aparelho, a miniatura sincroniza com a planilha;
+  visualizador com Compartilhar (Web Share), Baixar e Apagar.
+- Tutorial da Fadinha Luz na primeira visita (4 passos, com destaque na tela,
+  pode pular).
+- Noite e entardecer: lustres, abajures, velas, castiçais, lareira, poste e
+  guirlanda acendem com brilho quente (no palco e nas fotos).
+- Barra do topo compacta no celular (nome do cômodo continua acessível).
+- ADR 0012; e2e do álbum e do tutorial.
+
 ### Fase 5 — Progressão
 
 - Perfil v2 com migração do v1: estrelinhas por aparelho (nunca se perdem na

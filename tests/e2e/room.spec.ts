@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { centerOf, items, openRoom, touchGesture } from './helpers';
+import { centerOf, items, openRoom, skipTutorial, touchGesture } from './helpers';
 
 test.describe('cômodo', () => {
   test('adiciona item pelo catálogo, com seleção e barra do item', async ({ page }) => {
@@ -97,6 +97,9 @@ test.describe('cômodo', () => {
     await page.waitForTimeout(700);
     await page.reload();
     await expect(page.locator('.stage .stage-bg svg')).toBeVisible();
+    // tutorial já foi pulado: não aparece de novo
+    await page.waitForTimeout(800);
+    await expect(page.getByRole('dialog', { name: 'Tutorial' })).toHaveCount(0);
     await expect(items(page)).toHaveCount(count);
     await expect(page.locator('.stage-items .item[data-item-id="gatinho"]')).toHaveCount(1);
     await expect(page.locator('.stage')).toHaveAttribute('data-ambience', 'noite');
@@ -120,6 +123,7 @@ test('abertura → mapa → cômodo', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Meu Castelo' })).toBeVisible();
   await page.getByRole('button', { name: 'Abrir Quarto da Princesa' }).click();
   await expect(page.getByRole('heading', { name: /Quarto da Princesa/ })).toBeVisible();
+  await skipTutorial(page);
   await page.getByRole('button', { name: 'Voltar ao mapa do castelo' }).click();
   await expect(page.getByRole('heading', { name: 'Meu Castelo' })).toBeVisible();
 });
@@ -127,4 +131,19 @@ test('abertura → mapa → cômodo', async ({ page }) => {
 test('cômodo bloqueado não abre', async ({ page }) => {
   await page.goto('./#/comodo/baile');
   await expect(page.getByRole('heading', { name: 'Meu Castelo' })).toBeVisible();
+});
+
+test('tutorial da fadinha: 4 passos e não volta mais', async ({ page }) => {
+  await page.goto('./#/comodo/quarto');
+  const dialog = page.getByRole('dialog', { name: 'Tutorial' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('Fadinha Luz');
+  for (let i = 0; i < 3; i++) await dialog.getByRole('button', { name: 'Próximo' }).click();
+  await dialog.getByRole('button', { name: /Começar/ }).click();
+  await expect(dialog).toHaveCount(0);
+  await page.waitForTimeout(700);
+  await page.reload();
+  await expect(page.locator('.stage .stage-bg svg')).toBeVisible();
+  await page.waitForTimeout(900);
+  await expect(page.getByRole('dialog', { name: 'Tutorial' })).toHaveCount(0);
 });

@@ -1,4 +1,5 @@
 import type { Progression } from '../app/progression';
+import type { AudioEngine } from '../audio/engine';
 import { confetti } from '../fx/confetti';
 import type { Haptics } from './haptics';
 import { openLetter } from './letter';
@@ -12,12 +13,14 @@ export function installRewardFeedback(deps: {
   toast: Toaster;
   haptics: Haptics;
   router: Router;
+  sound: AudioEngine;
 }): () => void {
-  const { progression, toast, haptics, router } = deps;
+  const { progression, toast, haptics, router, sound } = deps;
   return progression.on((e) => {
     switch (e.type) {
       case 'mission-done':
         haptics.play('success');
+        sound.play('sparkle');
         toast.show(`Missão cumprida: ${e.title}! 🏆`, {
           tone: 'love',
           icon: 'trophy',
@@ -32,6 +35,7 @@ export function installRewardFeedback(deps: {
         break;
       case 'achievement':
         haptics.play('success');
+        sound.play('bell');
         confetti({ count: 45 });
         toast.show(`Nova medalha: ${e.title}! +10 ⭐`, {
           tone: 'love',

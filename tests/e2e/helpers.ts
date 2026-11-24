@@ -5,11 +5,21 @@ export interface Pt {
   y: number;
 }
 
-/** Abre o jogo direto num cômodo (pula a abertura). */
+/** Abre o jogo direto num cômodo (pula a abertura e o tutorial). */
 export async function openRoom(page: Page, roomId = 'quarto'): Promise<void> {
   await page.goto(`./#/comodo/${roomId}`);
   await expect(page.locator('.stage .stage-bg svg')).toBeVisible();
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10_000 });
+  await skipTutorial(page);
+}
+
+/** O tutorial da fadinha aparece na primeira visita a um cômodo. */
+export async function skipTutorial(page: Page): Promise<void> {
+  const skip = page
+    .getByRole('dialog', { name: 'Tutorial' })
+    .getByRole('button', { name: 'Pular' });
+  await skip.click({ timeout: 4_000 });
+  await expect(page.getByRole('dialog', { name: 'Tutorial' })).toHaveCount(0);
 }
 
 export function items(page: Page) {

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createFakeAppsScript } from '../../apps-script/test/fake-apps-script';
 import { FAKE_PIN, connectFakeSheets } from './fake-sheets';
-import { items } from './helpers';
+import { items, skipTutorial } from './helpers';
 
 async function enterWithPin(page: Page, pin: string) {
   await page.goto('./');
@@ -28,6 +28,7 @@ test.describe('sincronização com a planilha', () => {
     const pageA = await tablet.newPage();
     await enterWithPin(pageA, FAKE_PIN);
     await pageA.getByRole('button', { name: 'Abrir Quarto da Princesa' }).click();
+    await skipTutorial(pageA);
     await pageA.getByRole('button', { name: 'Adicionar Trono real' }).click({ force: true });
     // Espera o debounce (~3 s) e o envio.
     await expect(pageA.locator('.room-screen .sync-pill')).toHaveAttribute(
@@ -56,6 +57,7 @@ test.describe('sincronização com a planilha', () => {
     const server = await connectFakeSheets(context, undefined, network);
     await enterWithPin(page, FAKE_PIN);
     await page.getByRole('button', { name: 'Abrir Quarto da Princesa' }).click();
+    await skipTutorial(page);
     network.offline = true;
     await context.setOffline(true);
     await page.getByRole('button', { name: 'Adicionar Poltrona fofinha' }).click({ force: true });

@@ -55,6 +55,7 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
               }).then((ok) => {
                 if (!ok || !ctx.progression.unlockRoom(roomId)) return;
                 ctx.haptics.play('success');
+                ctx.sound.play('unlock');
                 confetti();
                 card.classList.add('is-unlocking');
                 window.setTimeout(() => {
@@ -107,7 +108,9 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
     'Presente do dia',
     () => {
       if (ctx.progression.dailyAvailable) {
-        openDailyGift(ctx.progression, refreshGift);
+        openDailyGift(ctx.progression, refreshGift, () => {
+          ctx.sound.play('chest');
+        });
       } else {
         ctx.toast.show('O baú de hoje já foi aberto. Volte amanhã para outro presente! 🎁', {
           icon: 'gift',
@@ -133,6 +136,9 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
       sync.el,
       pill.el,
       gift,
+      iconButton('image', 'Álbum de fotos', () => {
+        void ctx.router.go({ name: 'album' });
+      }),
       iconButton('trophy', 'Conquistas e missões', () => {
         void ctx.router.go({ name: 'achievements' });
       }),

@@ -4,6 +4,7 @@ import { RAMPS } from '../art/palette';
 import { roomBackgroundSvg } from '../art/rooms';
 import type { CatalogItem } from '../catalog/types';
 import type { Room } from '../core/model';
+import { lightOf } from './lights';
 
 export interface ComposeOptions {
   /** Inclui os gradientes compartilhados (obrigatório fora do documento, ex.: foto). */
@@ -48,7 +49,19 @@ export function composeRoomSvg(
       : room.ambience === 'entardecer'
         ? `<rect width="1000" height="1000" fill="rgb(255,190,170)" opacity=".18" style="mix-blend-mode:multiply"/>`
         : '';
+  let glows = '';
+  if (room.ambience !== 'dia') {
+    const alpha = room.ambience === 'noite' ? 1 : 0.45;
+    for (const item of room.items) {
+      const cat = getItem(item.itemId);
+      const a = cat ? art.get(cat.art) : undefined;
+      const spot = a && cat ? lightOf(item, a, false) : null;
+      if (spot) {
+        glows += `<circle cx="${(spot.x * 10).toFixed(1)}" cy="${(spot.y * 10).toFixed(1)}" r="${(spot.r * 10).toFixed(1)}" fill="url(#k-glow)" opacity="${alpha}" style="mix-blend-mode:screen"/>`;
+      }
+    }
+  }
   const defs = options.standalone ? `<defs>${SHARED_DEFS}</defs>` : '';
   const still = options.still ? '<style>*{animation:none!important}</style>' : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">${defs}${still}${bg}${items}${tint}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">${defs}${still}${bg}${items}${tint}${glows}</svg>`;
 }

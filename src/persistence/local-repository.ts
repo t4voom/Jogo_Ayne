@@ -41,6 +41,16 @@ export interface BackupRecord {
   readonly data: unknown;
 }
 
+export interface PhotoRecord {
+  readonly id: string;
+  readonly roomId: string;
+  readonly createdAt: number;
+  /** Foto completa (PNG). null = veio do outro aparelho (só miniatura). */
+  readonly image: Blob | null;
+  /** Miniatura JPEG em data URL (é o que vai para a planilha). */
+  readonly thumbnail: string;
+}
+
 export interface LoadedRooms {
   readonly rooms: Room[];
   /** Cômodos que não puderam ser lidos (foram para a quarentena). */
@@ -170,6 +180,25 @@ export class LocalRepository {
     put: (entry) => this.db.put(STORES.outbox, entry),
     remove: (key) => this.db.delete(STORES.outbox, key),
   };
+
+  // ------------------------------------------------------------------ álbum
+
+  async listPhotos(): Promise<PhotoRecord[]> {
+    const all = (await this.db.getAll(STORES.photos)) as PhotoRecord[];
+    return all.sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  async getPhoto(id: string): Promise<PhotoRecord | undefined> {
+    return (await this.db.get(STORES.photos, id)) as PhotoRecord | undefined;
+  }
+
+  async savePhoto(photo: PhotoRecord): Promise<void> {
+    await this.db.put(STORES.photos, photo);
+  }
+
+  async deletePhoto(id: string): Promise<void> {
+    await this.db.delete(STORES.photos, id);
+  }
 
   // ------------------------------------------------- backups / versões antigas
 

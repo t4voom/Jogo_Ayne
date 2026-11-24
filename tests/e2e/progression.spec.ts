@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { skipTutorial } from './helpers';
 
 test.describe('progressão', () => {
   test('presente diário dá estrelinhas e libera o Banheiro Real', async ({ page }) => {
@@ -25,6 +26,7 @@ test.describe('progressão', () => {
 
   test('missão cumprida rende estrelinhas', async ({ page }) => {
     await page.goto('./#/comodo/quarto');
+    await skipTutorial(page);
     await page.getByRole('button', { name: 'Adicionar Cama com dossel' }).click({ force: true });
     await expect(page.getByText('Missão cumprida: Uma cama de princesa! 🏆')).toBeVisible();
     // +1 por decorar e +10 da medalha "Primeiro toque"
@@ -38,6 +40,7 @@ test.describe('progressão', () => {
 
   test('item bloqueado pede estrelinhas', async ({ page }) => {
     await page.goto('./#/comodo/quarto');
+    await skipTutorial(page);
     await page.getByRole('button', { name: /Piano de cauda \(bloqueado/ }).click({ force: true });
     await expect(page.getByText(/Piano de cauda abre com 12 ⭐/)).toBeVisible();
   });

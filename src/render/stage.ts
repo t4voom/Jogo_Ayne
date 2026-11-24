@@ -3,6 +3,7 @@ import { roomBackgroundSvg } from '../art/rooms';
 import type { CatalogItem } from '../catalog/types';
 import type { PlacedItem, Room } from '../core/model';
 import { createLogger } from '../core/log';
+import { lightOf } from './lights';
 import './stage.css';
 
 const log = createLogger('stage');
@@ -50,6 +51,8 @@ export class StageView {
   private readonly bgEl: HTMLDivElement;
   private readonly itemsEl: HTMLDivElement;
   private readonly tintEl: HTMLDivElement;
+  private readonly lightsEl: HTMLDivElement;
+  private lightsKey = '';
   private readonly overlayEl: HTMLDivElement;
   private readonly selectionEl: HTMLDivElement;
   private readonly guidesEl: HTMLDivElement;
@@ -67,13 +70,14 @@ export class StageView {
     this.bgEl = div('stage-bg');
     this.itemsEl = div('stage-items');
     this.tintEl = div('stage-tint');
+    this.lightsEl = div('stage-lights');
     this.overlayEl = div('stage-overlay');
     this.selectionEl = div('stage-selection');
     this.selectionEl.innerHTML =
       '<span class="stage-handle" data-handle="transform" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
     this.guidesEl = div('stage-guides');
     this.overlayEl.append(this.guidesEl, this.selectionEl);
-    this.el.append(this.bgEl, this.itemsEl, this.tintEl, this.overlayEl);
+    this.el.append(this.bgEl, this.itemsEl, this.tintEl, this.lightsEl, this.overlayEl);
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => {
         this.size = this.el.clientWidth;
@@ -113,6 +117,7 @@ export class StageView {
       this.bgKey = bgKey;
       this.bgEl.innerHTML = roomBackgroundSvg(room);
     }
+    this.renderLights(room);
     if (prev?.items === room.items && prev.id === room.id) return;
 
     const alive = new Set<string>();
@@ -135,6 +140,29 @@ export class StageView {
         this.removeNode(uid, node, animate && prev?.id === room.id);
     }
     this.updateSelectionFrame();
+  }
+
+  /** Brilhos dos itens que acendem (visíveis à noite/entardecer via CSS). */
+  private renderLights(room: Room): void {
+    const spots = room.items
+      .map((item) => {
+        const catalog = this.deps.getItem(item.itemId);
+        const art = catalog ? this.deps.art.get(catalog.art) : undefined;
+        return art && catalog ? lightOf(item, art, catalog.anim.includes('flicker')) : null;
+      })
+      .filter((s) => s !== null);
+    const key = JSON.stringify(spots);
+    if (key === this.lightsKey) return;
+    this.lightsKey = key;
+    this.lightsEl.replaceChildren(
+      ...spots.map((s) => {
+        const el = div(`stage-light${s.flicker ? ' is-flicker' : ''}`);
+        el.style.left = `${s.x}%`;
+        el.style.top = `${s.y}%`;
+        el.style.width = `${s.r * 2}%`;
+        return el;
+      }),
+    );
   }
 
   private createNode(item: PlacedItem): ItemNode {
@@ -181,6 +209,10 @@ export class StageView {
             .then(() => {
               const current = this.nodes.get(item.uid);
               if (current && !current.leaving) this.applyItem(current, current.item);
+              if (this.room) {
+                this.lightsKey = '';
+                this.renderLights(this.room);
+              }
             })
             .catch((error: unknown) => {
               log.error(`Sem arte para ${item.itemId}`, error);

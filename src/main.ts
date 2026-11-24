@@ -8,12 +8,14 @@ import './ui/styles/components.css';
 import './ui/styles/cloud.css';
 
 import { installSharedDefs } from './art/defs';
+import { AudioEngine } from './audio/engine';
 import { ArtRegistry } from './art/registry';
 import { randomId } from './core/ids';
 import { createLogger, logHub } from './core/log';
 import type { Room, RoomId } from './core/model';
 import { createProfile } from './core/profile';
 import { createRoom } from './core/rooms';
+import { PhotoStore } from './app/album';
 import { Progression } from './app/progression';
 import { setupSync } from './app/sync-wiring';
 import { Autosaver } from './persistence/autosave';
@@ -97,6 +99,17 @@ async function boot(): Promise<void> {
   const actions = new GameActions(store, randomId);
   const haptics = new Haptics(() => store.getState().profile.settings.haptics);
   const art = new ArtRegistry();
+  const sound = new AudioEngine();
+  const applySound = () => {
+    const s = store.getState().profile.settings;
+    sound.setMusic(s.music);
+    sound.setSfx(s.sfx);
+  };
+  applySound();
+  sound.installUnlock();
+  store.subscribe((e) => {
+    if (e.type === 'profile' && e.prev.settings !== e.next.settings) applySound();
+  });
 
   // ------------------------------------------ salvamento automático local
   let flushLocal = (): Promise<void> => Promise.resolve();
@@ -126,7 +139,8 @@ async function boot(): Promise<void> {
   }
 
   // ----------------------------------------- sincronização com a planilha
-  const cloud = await setupSync({ store, repo, toast, flushLocal: () => flushLocal() });
+  const photos = new PhotoStore(repo);
+  const cloud = await setupSync({ store, repo, toast, photos, flushLocal: () => flushLocal() });
   const progression = new Progression(store, () => cloud.deviceId);
   progression.attach();
 
@@ -165,8 +179,11 @@ async function boot(): Promise<void> {
         const { createAchievementsScreen } = await import('./ui/screens/achievements');
         return createAchievementsScreen(c);
       }
-      case 'map':
       case 'album': {
+        const { createAlbumScreen } = await import('./ui/screens/album');
+        return createAlbumScreen(c);
+      }
+      case 'map': {
         const { createMapScreen } = await import('./ui/screens/map');
         return createMapScreen(c);
       }
@@ -181,16 +198,21 @@ async function boot(): Promise<void> {
     art,
     toast,
     haptics,
+    sound,
     router,
     newId: randomId,
     cloud,
     progression,
+    photos,
     repo,
     ensureRoom,
     isRoomUnlocked,
   };
 
-  installRewardFeedback({ progression, toast, haptics, router });
+  installRewardFeedback({ progression, toast, haptics, router, sound });
+  router.onChange(() => {
+    sound.play('page');
+  });
   progression.evaluate();
   await router.start();
   hideBootScreen();

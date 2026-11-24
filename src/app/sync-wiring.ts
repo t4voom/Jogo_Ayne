@@ -13,6 +13,7 @@ import {
 } from '../persistence/sync-engine';
 import type { Store } from '../state/store';
 import type { Toaster } from '../ui/toast';
+import type { PhotoStore } from './album';
 
 const log = createLogger('sync-wiring');
 
@@ -44,6 +45,7 @@ export async function setupSync(deps: {
   store: Store;
   repo: LocalRepository | null;
   toast: Toaster;
+  photos: PhotoStore;
   flushLocal: () => Promise<void>;
 }): Promise<Cloud> {
   const { store, repo, toast } = deps;
@@ -80,6 +82,10 @@ export async function setupSync(deps: {
           : 'Atualizado do outro aparelho ✨',
         { icon: 'sparkle', tone: 'love' },
       );
+    },
+    getPhoto: (id) => deps.photos.remote(id),
+    applyRemotePhotos: (list) => {
+      void deps.photos.applyRemote(list);
     },
     futureVersion: () => {
       if (futureWarned) return;

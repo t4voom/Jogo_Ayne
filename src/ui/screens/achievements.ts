@@ -59,6 +59,7 @@ export function createAchievementsScreen(ctx: GameContext): Screen {
                   if (got > 0) {
                     confetti({ count: 40 });
                     ctx.haptics.play('success');
+                    ctx.sound.play('chest');
                   }
                   render();
                 },
@@ -127,7 +128,9 @@ export function createAchievementsScreen(ctx: GameContext): Screen {
             attrs: { type: 'button' },
             on: {
               click: () => {
-                openDailyGift(p, render);
+                openDailyGift(p, render, () => {
+                  ctx.sound.play('chest');
+                });
               },
             },
           },

@@ -579,6 +579,7 @@ const manequim: ItemArt = {
 const lareira: ItemArt = {
   w: 240,
   h: 230,
+  light: { x: 120, y: 190, r: 150 },
   draw: ({ ramp: c }) =>
     shadow(120, 222, 110, 8) +
     rect(20, 70, 200, 150, 10, fs('#fbf3f0', '#d6c1c8', 3)) +

@@ -3,7 +3,10 @@ import { FAKE_PIN, SENHA, createAccount } from './fake-sheets';
 import { items, skipTutorial } from './helpers';
 import type { Page } from '@playwright/test';
 
-test.use({ loggedIn: false });
+// Sair da conta recarrega a página, que passa a ser controlada pelo service
+// worker do PWA. No WebKit do Playwright, pedidos que passam pelo service
+// worker escapam da planilha falsa (context.route); aqui não testamos o PWA.
+test.use({ loggedIn: false, serviceWorkers: 'block' });
 
 const userBox = (page: Page) => page.getByRole('textbox', { name: 'Nome de usuário' });
 const passBox = (page: Page) => page.getByLabel('Senha', { exact: true });

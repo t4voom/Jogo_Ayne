@@ -17,6 +17,13 @@ export interface Carta {
   readonly assinatura: string;
 }
 
+/**
+ * Nome de usuário da conta da Ayne. Só essa conta recebe a carta e as
+ * mensagens carinhosas, e é ela que herda o castelo salvo antes das contas.
+ * Maiúsculas e acentos não importam ("Ayne" = "ayne").
+ */
+export const CONTA_DA_AYNE = 'ayne';
+
 /** Enquanto for true, a carta mostra um aviso de que ainda está sendo escrita. */
 export const PLACEHOLDER = true as boolean;
 

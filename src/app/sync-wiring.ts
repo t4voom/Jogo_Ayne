@@ -1,10 +1,11 @@
-import { randomId } from '../core/ids';
+import type { Session } from '../core/account';
 import { createLogger } from '../core/log';
 import { roomInfo } from '../core/rooms';
 import { balance } from '../progression/stars';
 import { Cloud } from '../persistence/cloud';
 import type { LocalRepository } from '../persistence/local-repository';
-import { SheetsApi, fetchTransport } from '../persistence/sheets-api';
+import { SheetsApi, type Transport } from '../persistence/sheets-api';
+import { sessionStore } from '../persistence/session-store';
 import {
   SyncEngine,
   type OutboxEntry,
@@ -47,10 +48,12 @@ export async function setupSync(deps: {
   toast: Toaster;
   photos: PhotoStore;
   flushLocal: () => Promise<void>;
+  /** null quando não há planilha configurada (só neste aparelho). */
+  transport: Transport | null;
+  session: Session | null;
+  deviceId: string;
 }): Promise<Cloud> {
-  const { store, repo, toast } = deps;
-  const url = import.meta.env.VITE_SHEETS_API_URL?.trim() ?? '';
-  const transport = url ? fetchTransport(url) : null;
+  const { store, repo, toast, transport } = deps;
 
   let lastNotice = 0;
   let futureWarned = false;
@@ -97,16 +100,17 @@ export async function setupSync(deps: {
     },
   };
 
-  const cloud = await Cloud.load(
+  const cloud = Cloud.create(
     (credentials) =>
       new SyncEngine(
         transport ? new SheetsApi(transport, credentials) : null,
         host,
         repo?.outbox ?? new MemoryOutbox(),
       ),
-    repo,
     transport,
-    randomId,
+    deps.deviceId,
+    deps.session,
+    sessionStore,
   );
   const engine = cloud.engine;
 

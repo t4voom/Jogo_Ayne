@@ -2,22 +2,25 @@
  * O Castelo da Aynebrenda — backend no Google Apps Script.
  *
  * Cole este arquivo inteiro no editor do Apps Script vinculado à planilha,
- * rode `setup()` uma vez, defina a propriedade de script PIN e publique como
- * App da Web (Executar como: eu · Quem tem acesso: qualquer pessoa).
- * Passo a passo completo em apps-script/README.md.
+ * rode `setup()` uma vez, defina a propriedade de script PIN (o código de
+ * convite para criar contas) e publique como App da Web (Executar como: eu ·
+ * Quem tem acesso: qualquer pessoa). Passo a passo em apps-script/README.md.
  *
  * Contrato (um único endpoint):
- *   GET  ?action=ping                         → saúde do serviço
- *   POST { action, pin, deviceId, payload }   → load | saveRoom | saveProfile | savePhoto | deletePhoto
+ *   GET  (qualquer)                               → saúde do serviço
+ *   POST { action, deviceId, payload }            → signup | login
+ *   POST { action, deviceId, token, payload }     → load | saveRoom | saveProfile | savePhoto
+ *                                                   | deletePhoto | changePassword
  *   Resposta sempre: { ok, data?, error?: { code, message, retryAfter? }, serverTime }
  *
- * O cliente envia POST com Content-Type text/plain (requisição simples, sem
- * preflight de CORS); o corpo é JSON em texto.
+ * Cada conta tem o próprio castelo: o perfil dos dados vem do token de
+ * sessão, nunca do pedido. O cliente envia POST com Content-Type text/plain
+ * (requisição simples, sem preflight de CORS); o corpo é JSON em texto.
  */
 
 // ------------------------------------------------------------- configuração
 
-var API_VERSION = 1;
+var API_VERSION = 2;
 var MAX_CELL = 45000; // limite do Sheets é 50.000 caracteres por célula
 var MAX_BODY = 1500000; // ~1,5 MB por requisição
 var MAX_CHUNKS = 40;
@@ -25,13 +28,21 @@ var LOCK_WAIT_MS = 20000;
 var LOG_MAX_ROWS = 2000;
 var LOG_TRIM_ROWS = 500;
 
-// Proteção do PIN (CacheService)
-var PIN_MAX_FAILS_PER_DEVICE = 5;
-var PIN_DEVICE_LOCK_SECONDS = 15 * 60;
-var PIN_MAX_FAILS_GLOBAL = 30;
-var PIN_GLOBAL_WINDOW_SECONDS = 60 * 60;
-var PIN_GLOBAL_LOCK_SECONDS = 30 * 60;
+// Proteção contra chutes de senha e de convite (CacheService)
+var AUTH_MAX_FAILS_PER_DEVICE = 5;
+var AUTH_DEVICE_LOCK_SECONDS = 15 * 60;
+var AUTH_MAX_FAILS_GLOBAL = 30;
+var AUTH_GLOBAL_WINDOW_SECONDS = 60 * 60;
+var AUTH_GLOBAL_LOCK_SECONDS = 30 * 60;
 var MAX_KNOWN_DEVICES = 20;
+
+// Contas
+var MAX_ACCOUNTS = 50;
+var HASH_ROUNDS = 300;
+var ACCOUNT_CACHE_SECONDS = 10 * 60;
+/** O castelo salvo antes das contas existirem tinha este perfil. */
+var LEGACY_ACCOUNT_ID = 'ayne';
+var SESSION_EXPIRED = 'Sua sessão terminou. Entre de novo com seu usuário e senha.';
 
 var SHEETS = {
   saves: {
@@ -72,6 +83,19 @@ var SHEETS = {
       'chunkTotal',
     ],
   },
+  contas: {
+    name: 'contas',
+    headers: [
+      'accountId',
+      'usuario',
+      'nome',
+      'sal',
+      'senha',
+      'criadaEm',
+      'versaoSessao',
+      'redefinirSenha',
+    ],
+  },
   log: {
     name: 'log',
     headers: ['timestamp', 'acao', 'deviceId', 'resultado', 'erro'],
@@ -81,6 +105,8 @@ var SHEETS = {
 var ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 var BASE64_RE = /^[A-Za-z0-9+/=]+$/;
 var THUMB_RE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
+var USER_RE = /^[a-z0-9._-]{3,20}$/;
+var TOKEN_RE = /^([A-Za-z0-9_-]{1,64})\.(\d{1,9})\.(\d{1,15})\.([A-Za-z0-9_=-]{20,100})$/;
 
 // ------------------------------------------------------------------ setup
 
@@ -101,22 +127,18 @@ function setup() {
     // Texto puro: o Sheets não tenta interpretar os dados.
     sheet.getRange(1, 1, sheet.getMaxRows(), def.headers.length).setNumberFormat('@');
   });
-  var pin = PropertiesService.getScriptProperties().getProperty('PIN');
   Logger.log(
-    pin
-      ? 'Tudo pronto! O PIN já está definido nas propriedades do script.'
-      : 'Abas criadas. Agora defina a propriedade de script "PIN" (Configurações do projeto → Propriedades do script).',
+    getInvite()
+      ? 'Tudo pronto! O código de convite (propriedade PIN) já está definido.'
+      : 'Abas criadas. Agora defina a propriedade de script "PIN" — é o código de convite para criar contas (Configurações do projeto → Propriedades do script).',
   );
 }
 
 // -------------------------------------------------------------- endpoints
 
-function doGet(e) {
-  var action = e && e.parameter ? e.parameter.action : '';
-  if (action === 'ping') {
-    return respond(ok({ version: API_VERSION, configured: Boolean(getPin()) }));
-  }
-  return respond(fail('bad_request', 'Use POST, ou GET ?action=ping.'));
+/** Saúde do serviço: abrir a URL no navegador mostra se está tudo certo. */
+function doGet() {
+  return respond(ok({ version: API_VERSION, configured: Boolean(getInvite()) }));
 }
 
 function doPost(e) {
@@ -126,38 +148,63 @@ function doPost(e) {
   } catch (err) {
     return respond(fail('bad_request', messageOf(err)));
   }
-
-  var auth = checkPin(req.pin, req.deviceId);
-  if (!auth.ok) {
-    logEvent(req.action, req.deviceId, auth.error.code, auth.error.message);
-    return respond(auth);
+  if (req.legacy) {
+    return respond(
+      fail(
+        'upgrade_required',
+        'O jogo foi atualizado: feche e abra de novo para entrar com a sua conta.',
+      ),
+    );
   }
 
   try {
+    if (req.action === 'signup' || req.action === 'login') {
+      var res =
+        req.action === 'signup'
+          ? signup(req.payload, req.deviceId)
+          : login(req.payload, req.deviceId);
+      var who = normalizeUser(req.payload.usuario || '');
+      logEvent(req.action, req.deviceId, res.ok ? 'ok' : res.error.code, who);
+      return respond(res);
+    }
+
+    var auth = authenticate(req.token);
+    if (!auth.ok) {
+      logEvent(req.action, req.deviceId, auth.error.code, auth.error.message);
+      return respond(auth);
+    }
+    var account = auth.account;
+    // Cada conta só enxerga os próprios dados: o perfil vem do token, nunca do pedido.
+    var payload = req.payload;
+    payload.profileId = account.accountId;
+
     var result;
     switch (req.action) {
       case 'load':
-        result = load(req.payload);
+        result = load(payload);
         break;
       case 'saveRoom':
         result = withLock(function () {
-          return saveRoom(req.payload, req.deviceId);
+          return saveRoom(payload, req.deviceId);
         });
         break;
       case 'saveProfile':
         result = withLock(function () {
-          return saveProfile(req.payload);
+          return saveProfile(payload);
         });
         break;
       case 'savePhoto':
         result = withLock(function () {
-          return savePhoto(req.payload);
+          return savePhoto(payload);
         });
         break;
       case 'deletePhoto':
         result = withLock(function () {
-          return deletePhoto(req.payload);
+          return deletePhoto(payload);
         });
+        break;
+      case 'changePassword':
+        result = changePassword(payload, account, req.deviceId);
         break;
       default:
         result = fail('bad_request', 'Ação desconhecida: ' + req.action);
@@ -167,7 +214,7 @@ function doPost(e) {
         req.action,
         req.deviceId,
         result.ok ? 'ok' : result.error.code,
-        result.ok ? '' : result.error.message,
+        (result.ok ? '' : result.error.message + ' ') + '[' + account.usuario + ']',
       );
     }
     return respond(result);
@@ -193,41 +240,54 @@ function parseRequest(e) {
   }
   if (!body || typeof body !== 'object') throw new Error('Corpo inválido.');
   if (typeof body.action !== 'string') throw new Error('Campo "action" ausente.');
-  if (typeof body.pin !== 'string' || body.pin.length === 0 || body.pin.length > 64) {
-    throw new Error('Campo "pin" ausente.');
-  }
   if (typeof body.deviceId !== 'string' || !ID_RE.test(body.deviceId)) {
     throw new Error('Campo "deviceId" inválido.');
   }
   var payload = body.payload && typeof body.payload === 'object' ? body.payload : {};
-  if (typeof payload.profileId !== 'string' || !ID_RE.test(payload.profileId)) {
-    throw new Error('Campo "payload.profileId" inválido.');
-  }
-  return { action: body.action, pin: body.pin, deviceId: body.deviceId, payload: payload };
+  var token = typeof body.token === 'string' ? body.token : '';
+  return {
+    action: body.action,
+    deviceId: body.deviceId,
+    token: token,
+    payload: payload,
+    // Versão antiga do jogo (antes das contas) ainda mandando o PIN.
+    legacy: !token && typeof body.pin === 'string',
+  };
 }
 
-// ------------------------------------------------------------------- PIN
+// ------------------------------------------------------ convite e chutes
 
-function getPin() {
+/** O código de convite é a propriedade de script PIN. */
+function getInvite() {
   return PropertiesService.getScriptProperties().getProperty('PIN');
 }
 
 /**
- * Confere o PIN com limite de tentativas:
+ * Segredo do servidor (gerado sozinho, nunca sai da planilha): assina os
+ * tokens de sessão e "tempera" o hash das senhas. Só é criado com a trava
+ * (dentro do cadastro), para dois pedidos simultâneos não criarem dois.
+ */
+function getSecret(create) {
+  var props = PropertiesService.getScriptProperties();
+  var secret = props.getProperty('SEGREDO');
+  if (!secret && create) {
+    secret = Utilities.getUuid() + Utilities.getUuid();
+    props.setProperty('SEGREDO', secret);
+  }
+  return secret;
+}
+
+/**
+ * Limite de tentativas de senha e de convite:
  *  - por aparelho: 5 erros → bloqueio de 15 min
  *  - global: 30 erros/hora → bloqueio de 30 min para aparelhos desconhecidos
- * Aparelhos que já acertaram o PIN antes continuam funcionando no bloqueio
- * global (um ataque não tranca a Ayne para fora do castelo).
+ * Aparelhos que já entraram antes continuam funcionando no bloqueio global
+ * (um ataque não tranca a Ayne para fora do castelo).
  */
-function checkPin(pin, deviceId) {
-  var expected = getPin();
-  if (!expected) {
-    return fail('not_configured', 'O PIN ainda não foi definido nas propriedades do script.');
-  }
+function authLocked(deviceId) {
   var cache = CacheService.getScriptCache();
   var now = Date.now();
-  var deviceLockKey = 'pinlock:' + deviceId;
-  var lockedUntil = Number(cache.get(deviceLockKey) || 0);
+  var lockedUntil = Number(cache.get('authlock:' + deviceId) || 0);
   if (lockedUntil > now) {
     return fail(
       'locked',
@@ -235,43 +295,51 @@ function checkPin(pin, deviceId) {
       Math.ceil((lockedUntil - now) / 1000),
     );
   }
-  var known = isKnownDevice(deviceId);
-  var globalUntil = Number(cache.get('pinlock:global') || 0);
-  if (!known && globalUntil > now) {
+  var globalUntil = Number(cache.get('authlock:global') || 0);
+  if (globalUntil > now && !isKnownDevice(deviceId)) {
     return fail(
       'locked',
       'Muitas tentativas. Tente de novo mais tarde.',
       Math.ceil((globalUntil - now) / 1000),
     );
   }
+  return null;
+}
 
-  if (safeEquals(String(pin), String(expected))) {
-    cache.remove('pinfail:' + deviceId);
-    if (!known) rememberDevice(deviceId);
-    return { ok: true };
-  }
-
-  var fails = Number(cache.get('pinfail:' + deviceId) || 0) + 1;
-  cache.put('pinfail:' + deviceId, String(fails), PIN_DEVICE_LOCK_SECONDS);
-  if (fails >= PIN_MAX_FAILS_PER_DEVICE) {
-    cache.put(deviceLockKey, String(now + PIN_DEVICE_LOCK_SECONDS * 1000), PIN_DEVICE_LOCK_SECONDS);
-    cache.remove('pinfail:' + deviceId);
-  }
-  var globalFails = Number(cache.get('pinfail:global') || 0) + 1;
-  cache.put('pinfail:global', String(globalFails), PIN_GLOBAL_WINDOW_SECONDS);
-  if (globalFails >= PIN_MAX_FAILS_GLOBAL) {
+/** Registra um erro e devolve quantas tentativas restam neste aparelho. */
+function authFailed(deviceId) {
+  var cache = CacheService.getScriptCache();
+  var now = Date.now();
+  var fails = Number(cache.get('authfail:' + deviceId) || 0) + 1;
+  cache.put('authfail:' + deviceId, String(fails), AUTH_DEVICE_LOCK_SECONDS);
+  if (fails >= AUTH_MAX_FAILS_PER_DEVICE) {
     cache.put(
-      'pinlock:global',
-      String(now + PIN_GLOBAL_LOCK_SECONDS * 1000),
-      PIN_GLOBAL_LOCK_SECONDS,
+      'authlock:' + deviceId,
+      String(now + AUTH_DEVICE_LOCK_SECONDS * 1000),
+      AUTH_DEVICE_LOCK_SECONDS,
     );
-    cache.remove('pinfail:global');
+    cache.remove('authfail:' + deviceId);
   }
-  var left = Math.max(0, PIN_MAX_FAILS_PER_DEVICE - fails);
-  return fail(
-    'unauthorized',
-    'Código do castelo incorreto.' + (left > 0 ? ' Restam ' + left + ' tentativas.' : ''),
-  );
+  var globalFails = Number(cache.get('authfail:global') || 0) + 1;
+  cache.put('authfail:global', String(globalFails), AUTH_GLOBAL_WINDOW_SECONDS);
+  if (globalFails >= AUTH_MAX_FAILS_GLOBAL) {
+    cache.put(
+      'authlock:global',
+      String(now + AUTH_GLOBAL_LOCK_SECONDS * 1000),
+      AUTH_GLOBAL_LOCK_SECONDS,
+    );
+    cache.remove('authfail:global');
+  }
+  return Math.max(0, AUTH_MAX_FAILS_PER_DEVICE - fails);
+}
+
+function authSucceeded(deviceId) {
+  CacheService.getScriptCache().remove('authfail:' + deviceId);
+  if (!isKnownDevice(deviceId)) rememberDevice(deviceId);
+}
+
+function attemptsLeft(left) {
+  return left > 0 ? ' Restam ' + left + ' tentativas.' : '';
 }
 
 /** Comparação em tempo constante (não revela quantos caracteres acertou). */
@@ -305,6 +373,260 @@ function rememberDevice(deviceId) {
   list.push(deviceId);
   while (list.length > MAX_KNOWN_DEVICES) list.shift();
   PropertiesService.getScriptProperties().setProperty('KNOWN_DEVICES', JSON.stringify(list));
+}
+
+// ---------------------------------------------------------------- contas
+
+/** "Ayne", " AYNÉ " → "ayne": o nome de usuário não diferencia maiúsculas nem acentos. */
+function normalizeUser(name) {
+  return String(name).trim().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+function readAccounts() {
+  var table = readTable(SHEETS.contas);
+  var list = table.rows.map(function (r) {
+    return {
+      accountId: String(r[0]),
+      usuario: String(r[1]),
+      nome: String(r[2]),
+      sal: String(r[3]),
+      senha: String(r[4]),
+      criadaEm: Number(r[5]),
+      versaoSessao: Number(r[6]) || 1,
+      redefinirSenha: String(r[7] === undefined || r[7] === null ? '' : r[7]),
+    };
+  });
+  return { table: table, list: list };
+}
+
+function accountRow(a) {
+  return [
+    a.accountId,
+    a.usuario,
+    a.nome,
+    a.sal,
+    a.senha,
+    a.criadaEm,
+    a.versaoSessao,
+    a.redefinirSenha,
+  ];
+}
+
+/** Regrava uma conta (com a trava já pega). */
+function writeAccount(accounts, account) {
+  var rows = accounts.list.map(function (a) {
+    return accountRow(a.accountId === account.accountId ? account : a);
+  });
+  writeTable(SHEETS.contas, accounts.table, rows);
+  cacheAccount(account);
+}
+
+function findBy(list, field, value) {
+  for (var i = 0; i < list.length; i++) if (list[i][field] === value) return list[i];
+  return null;
+}
+
+/** Hash da senha: HMAC-SHA256 com sal e o segredo do servidor, repetido várias vezes. */
+function hashPassword(password, salt, secret) {
+  var h = salt + ':' + password;
+  for (var i = 0; i < HASH_ROUNDS; i++) {
+    h = Utilities.base64EncodeWebSafe(
+      Utilities.computeHmacSha256Signature(h, secret, Utilities.Charset.UTF_8),
+    );
+  }
+  return h;
+}
+
+function validPassword(password) {
+  return typeof password === 'string' && password.length >= 6 && password.length <= 64;
+}
+
+function signup(payload, deviceId) {
+  var invite = getInvite();
+  if (!invite) {
+    return fail(
+      'not_configured',
+      'O código de convite ainda não foi definido (propriedade PIN do script).',
+    );
+  }
+  var locked = authLocked(deviceId);
+  if (locked) return locked;
+
+  var nome = String(payload.usuario || '').trim();
+  var usuario = normalizeUser(nome);
+  if (!USER_RE.test(usuario) || nome.length > 20) {
+    return fail(
+      'bad_request',
+      'O nome de usuário precisa ter de 3 a 20 letras ou números, sem espaços.',
+    );
+  }
+  if (!validPassword(payload.senha)) {
+    return fail('bad_request', 'A senha precisa ter de 6 a 64 caracteres.');
+  }
+  if (typeof payload.convite !== 'string' || !safeEquals(payload.convite.trim(), String(invite))) {
+    return fail(
+      'unauthorized',
+      'Código de convite incorreto.' + attemptsLeft(authFailed(deviceId)),
+    );
+  }
+
+  return withLock(function () {
+    var secret = getSecret(true);
+    var accounts = readAccounts();
+    if (findBy(accounts.list, 'usuario', usuario)) {
+      return fail('taken', 'Esse nome de usuário já existe. Escolha outro.');
+    }
+    if (accounts.list.length >= MAX_ACCOUNTS) {
+      return fail('bad_request', 'O castelo já tem contas demais.');
+    }
+    // O castelo salvo antes das contas existirem fica com a conta da Ayne.
+    var takeLegacy =
+      payload.legado === true && !findBy(accounts.list, 'accountId', LEGACY_ACCOUNT_ID);
+    var account = {
+      accountId: takeLegacy ? LEGACY_ACCOUNT_ID : 'c' + Utilities.getUuid().replace(/-/g, ''),
+      usuario: usuario,
+      nome: nome,
+      sal: Utilities.getUuid(),
+      senha: '',
+      criadaEm: Date.now(),
+      versaoSessao: 1,
+      redefinirSenha: '',
+    };
+    account.senha = hashPassword(payload.senha, account.sal, secret);
+    var rows = accounts.table.rows.slice();
+    rows.push(accountRow(account));
+    writeTable(SHEETS.contas, accounts.table, rows);
+    cacheAccount(account);
+    authSucceeded(deviceId);
+    return ok(sessionOf(account, secret));
+  });
+}
+
+function login(payload, deviceId) {
+  var locked = authLocked(deviceId);
+  if (locked) return locked;
+  var usuario = normalizeUser(payload.usuario || '');
+  var senha = typeof payload.senha === 'string' ? payload.senha.slice(0, 64) : '';
+  var secret = getSecret(false);
+  var account = secret ? findBy(readAccounts().list, 'usuario', usuario) : null;
+
+  if (secret && account) {
+    if (account.redefinirSenha && safeEquals(senha, account.redefinirSenha)) {
+      // Senha provisória escrita pelo Gustavo na aba "contas": vira a senha.
+      return withLock(function () {
+        var accounts = readAccounts();
+        var fresh = findBy(accounts.list, 'accountId', account.accountId);
+        if (!fresh) return fail('unauthorized', 'Usuário ou senha incorretos.');
+        fresh.sal = Utilities.getUuid();
+        fresh.senha = hashPassword(senha, fresh.sal, secret);
+        fresh.redefinirSenha = '';
+        fresh.versaoSessao += 1;
+        writeAccount(accounts, fresh);
+        authSucceeded(deviceId);
+        return ok(sessionOf(fresh, secret));
+      });
+    }
+    if (safeEquals(hashPassword(senha, account.sal, secret), account.senha)) {
+      authSucceeded(deviceId);
+      return ok(sessionOf(account, secret));
+    }
+  } else if (secret) {
+    // Mesmo trabalho de quando o usuário existe: não revela quem tem conta.
+    hashPassword(senha, 'sal', secret);
+  }
+  return fail('unauthorized', 'Usuário ou senha incorretos.' + attemptsLeft(authFailed(deviceId)));
+}
+
+function changePassword(payload, account, deviceId) {
+  var locked = authLocked(deviceId);
+  if (locked) return locked;
+  if (!validPassword(payload.novaSenha)) {
+    return fail('bad_request', 'A senha nova precisa ter de 6 a 64 caracteres.');
+  }
+  var secret = getSecret(false);
+  return withLock(function () {
+    var accounts = readAccounts();
+    var fresh = findBy(accounts.list, 'accountId', account.accountId);
+    if (!fresh || !secret) return fail('unauthorized', SESSION_EXPIRED);
+    var current = typeof payload.senhaAtual === 'string' ? payload.senhaAtual : '';
+    if (!safeEquals(hashPassword(current, fresh.sal, secret), fresh.senha)) {
+      return fail(
+        'wrong_password',
+        'A senha atual não confere.' + attemptsLeft(authFailed(deviceId)),
+      );
+    }
+    fresh.sal = Utilities.getUuid();
+    fresh.senha = hashPassword(payload.novaSenha, fresh.sal, secret);
+    fresh.redefinirSenha = '';
+    // Os outros aparelhos precisam entrar de novo com a senha nova.
+    fresh.versaoSessao += 1;
+    writeAccount(accounts, fresh);
+    return ok(sessionOf(fresh, secret));
+  });
+}
+
+// --------------------------------------------------------------- sessão
+
+/**
+ * Token de sessão: "conta.versão.emitidoEm.assinatura". Não expira (a Ayne
+ * não precisa entrar toda hora); trocar a senha muda a versão e derruba os
+ * tokens antigos.
+ */
+function sessionOf(account, secret) {
+  var body = account.accountId + '.' + account.versaoSessao + '.' + Date.now();
+  return {
+    accountId: account.accountId,
+    usuario: account.usuario,
+    nome: account.nome,
+    token: body + '.' + signToken(body, secret),
+  };
+}
+
+function signToken(body, secret) {
+  return Utilities.base64EncodeWebSafe(
+    Utilities.computeHmacSha256Signature('sessao:' + body, secret, Utilities.Charset.UTF_8),
+  );
+}
+
+function authenticate(token) {
+  var m = TOKEN_RE.exec(token || '');
+  var secret = getSecret(false);
+  if (!m || !secret) return fail('unauthorized', SESSION_EXPIRED);
+  var body = m[1] + '.' + m[2] + '.' + m[3];
+  if (!safeEquals(m[4], signToken(body, secret))) return fail('unauthorized', SESSION_EXPIRED);
+  var account = cachedAccount(m[1]);
+  if (!account || account.versaoSessao !== Number(m[2])) {
+    return fail('unauthorized', SESSION_EXPIRED);
+  }
+  return { ok: true, account: account };
+}
+
+/** Resumo da conta no cache (evita ler a aba "contas" a cada gravação). */
+function cacheAccount(account) {
+  CacheService.getScriptCache().put(
+    'conta:' + account.accountId,
+    JSON.stringify({
+      accountId: account.accountId,
+      usuario: account.usuario,
+      nome: account.nome,
+      versaoSessao: account.versaoSessao,
+    }),
+    ACCOUNT_CACHE_SECONDS,
+  );
+}
+
+function cachedAccount(accountId) {
+  var raw = CacheService.getScriptCache().get('conta:' + accountId);
+  if (raw) {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      // cache estragado: lê da planilha
+    }
+  }
+  var account = findBy(readAccounts().list, 'accountId', accountId);
+  if (account) cacheAccount(account);
+  return account;
 }
 
 // ------------------------------------------------------------------ ações

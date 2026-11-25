@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test.describe('PWA', () => {
   test('funciona offline depois do primeiro acesso', async ({ page, context, browserName }) => {
@@ -19,7 +19,6 @@ test.describe('PWA', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: /Aynebrenda/ })).toBeVisible();
     await page.getByRole('button', { name: 'Entrar no castelo' }).click({ force: true });
-    await page.getByRole('button', { name: 'Jogar só neste aparelho' }).click();
     await expect(page.getByRole('heading', { name: 'Meu Castelo' })).toBeVisible();
     await page.getByRole('button', { name: /Abrir.*Quarto da Princesa/ }).click();
     await expect(page.locator('.stage-items .item').first()).toBeVisible();

@@ -49,7 +49,7 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
     ctx.haptics.play('light');
     ctx.sound.play('tick');
   });
-  const sync = createSyncIndicator(ctx.cloud);
+  const sync = createSyncIndicator(ctx.cloud, ctx.saveNow);
   cleanups.push(sync.destroy);
   const syncSlot = h('div', { class: 'room-sync-slot' }, sync.el);
   const pill = createStarsPill(ctx.store, ctx.progression);
@@ -58,6 +58,9 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
     'header',
     { class: 'room-top' },
     iconButton('map', 'Voltar ao mapa do castelo', () => {
+      // O botão do mapa sempre vai ao mapa (o "voltar" do sistema é que
+      // primeiro só tira a seleção).
+      ctx.store.select(null);
       ctx.router.back({ name: 'map' });
     }),
     h(
@@ -449,7 +452,7 @@ export async function createRoomScreen(ctx: GameContext, roomId: RoomId): Promis
             const stop = runTutorial(
               [
                 {
-                  text: 'Oi, Princesa Ayne! Eu sou a Fadinha Luz ✨ Toque num item do catálogo para ele aparecer no cômodo.',
+                  text: `Oi, ${ctx.forAyne ? 'Princesa Ayne' : (ctx.playerName ?? 'Majestade')}! Eu sou a Fadinha Luz ✨ Toque num item do catálogo para ele aparecer no cômodo.`,
                   target: () => el.querySelector('.drawer-list'),
                 },
                 {

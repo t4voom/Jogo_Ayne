@@ -2,6 +2,7 @@
  * Simulação fiel (o suficiente) dos serviços do Google Apps Script usados pelo
  * Code.gs, para rodar o backend de verdade dentro dos testes (Node + vm).
  */
+import { createHmac, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
@@ -134,6 +135,7 @@ export interface FakeEnv {
     doPost(e: unknown): { getContent(): string };
     doGet(e: unknown): { getContent(): string };
     setup(): void;
+    normalizeUser(name: string): string;
     splitChunks(text: string): string[];
   };
 }
@@ -222,6 +224,20 @@ export function createFakeAppsScript(options: { pin?: string } = {}): FakeEnv {
       log: (m: string) => {
         logs.push(m);
       },
+    },
+    Utilities: {
+      Charset: { UTF_8: 'UTF-8' },
+      getUuid: () => randomUUID(),
+      // Como no Apps Script: devolve bytes com sinal (-128..127).
+      computeHmacSha256Signature: (value: string, key: string) =>
+        [...createHmac('sha256', Buffer.from(key, 'utf8')).update(value, 'utf8').digest()].map(
+          (b) => (b > 127 ? b - 256 : b),
+        ),
+      base64EncodeWebSafe: (bytes: number[]) =>
+        Buffer.from(bytes.map((b) => b & 0xff))
+          .toString('base64')
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_'),
     },
   });
   vm.runInContext(CODE, context, { filename: 'Code.gs' });

@@ -1,4 +1,5 @@
 import * as z from 'zod/mini';
+import type { Session } from '../core/account';
 import type { ProfileWire } from './wire';
 
 /**
@@ -11,6 +12,9 @@ import type { ProfileWire } from './wire';
 
 export type ApiErrorCode =
   | 'unauthorized'
+  | 'wrong_password'
+  | 'taken'
+  | 'upgrade_required'
   | 'locked'
   | 'not_configured'
   | 'conflict'
@@ -137,6 +141,9 @@ const ConflictProfileSchema = z.object({ profile: RemoteProfileSchema });
 
 const KNOWN_CODES = new Set<string>([
   'unauthorized',
+  'wrong_password',
+  'taken',
+  'upgrade_required',
   'locked',
   'not_configured',
   'conflict',
@@ -147,54 +154,101 @@ const KNOWN_CODES = new Set<string>([
 ]);
 
 export interface Credentials {
-  readonly pin: string;
+  readonly token: string;
   readonly deviceId: string;
 }
 
+const SessionSchema = z.object({
+  accountId: z.string().check(z.regex(/^[A-Za-z0-9_-]{1,64}$/)),
+  usuario: z.string().check(z.minLength(1)),
+  nome: z.string().check(z.minLength(1)),
+  token: z.string().check(z.minLength(20)),
+});
+
+/** Lê o envelope { ok, data, error } da planilha e valida os dados. */
+function parseResponse<T>(text: string, action: string, schema: z.ZodMiniType<T>): T {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    // O Apps Script devolve uma página HTML quando a URL/publicação está errada.
+    throw new ApiError(
+      'invalid_response',
+      'A planilha não respondeu em JSON (confira a URL publicada)',
+    );
+  }
+  const env = EnvelopeSchema.safeParse(raw);
+  if (!env.success)
+    throw new ApiError('invalid_response', 'Resposta da planilha em formato inesperado');
+  if (!env.data.ok) {
+    const err = env.data.error;
+    const code = err && KNOWN_CODES.has(err.code) ? (err.code as ApiErrorCode) : 'server_error';
+    throw new ApiError(code, err?.message ?? 'Erro desconhecido', err?.retryAfter, env.data.data);
+  }
+  const data = schema.safeParse(env.data.data);
+  if (!data.success)
+    throw new ApiError('invalid_response', `Resposta de "${action}" em formato inesperado`);
+  return data.data;
+}
+
+async function request<T>(
+  transport: Transport,
+  action: string,
+  body: Record<string, unknown>,
+  schema: z.ZodMiniType<T>,
+  keepalive = false,
+): Promise<T> {
+  const text = await transport(JSON.stringify({ action, ...body }), { keepalive });
+  return parseResponse(text, action, schema);
+}
+
+/** Cria uma conta (precisa do código de convite). */
+export function signup(
+  transport: Transport,
+  deviceId: string,
+  input: { usuario: string; senha: string; convite: string; legado: boolean },
+): Promise<Session> {
+  return request(transport, 'signup', { deviceId, payload: input }, SessionSchema);
+}
+
+/** Entra com usuário e senha. */
+export function login(
+  transport: Transport,
+  deviceId: string,
+  input: { usuario: string; senha: string },
+): Promise<Session> {
+  return request(transport, 'login', { deviceId, payload: input }, SessionSchema);
+}
+
+/** Pedidos de uma conta já logada (o token diz de quem são os dados). */
 export class SheetsApi {
   constructor(
     private readonly transport: Transport,
     private readonly credentials: () => Credentials | null,
-    readonly profileId = 'ayne',
   ) {}
 
-  private async call<T>(
+  private call<T>(
     action: string,
     payload: Record<string, unknown>,
     schema: z.ZodMiniType<T>,
     keepalive = false,
   ): Promise<T> {
     const creds = this.credentials();
-    if (!creds) throw new ApiError('unauthorized', 'Código do castelo não informado');
-    const body = JSON.stringify({
+    if (!creds) {
+      return Promise.reject(new ApiError('unauthorized', 'Entre com seu usuário e senha.'));
+    }
+    return request(
+      this.transport,
       action,
-      pin: creds.pin,
-      deviceId: creds.deviceId,
-      payload: { profileId: this.profileId, ...payload },
-    });
-    const text = await this.transport(body, { keepalive });
-    let raw: unknown;
-    try {
-      raw = JSON.parse(text);
-    } catch {
-      // O Apps Script devolve uma página HTML quando a URL/publicação está errada.
-      throw new ApiError(
-        'invalid_response',
-        'A planilha não respondeu em JSON (confira a URL publicada)',
-      );
-    }
-    const env = EnvelopeSchema.safeParse(raw);
-    if (!env.success)
-      throw new ApiError('invalid_response', 'Resposta da planilha em formato inesperado');
-    if (!env.data.ok) {
-      const err = env.data.error;
-      const code = err && KNOWN_CODES.has(err.code) ? (err.code as ApiErrorCode) : 'server_error';
-      throw new ApiError(code, err?.message ?? 'Erro desconhecido', err?.retryAfter, env.data.data);
-    }
-    const data = schema.safeParse(env.data.data);
-    if (!data.success)
-      throw new ApiError('invalid_response', `Resposta de "${action}" em formato inesperado`);
-    return data.data;
+      { token: creds.token, deviceId: creds.deviceId, payload },
+      schema,
+      keepalive,
+    );
+  }
+
+  /** Troca a senha; devolve a sessão nova (os outros aparelhos precisam entrar de novo). */
+  changePassword(senhaAtual: string, novaSenha: string): Promise<Session> {
+    return this.call('changePassword', { senhaAtual, novaSenha }, SessionSchema);
   }
 
   load(): Promise<LoadResult> {

@@ -13,6 +13,7 @@ export default {
         'state',
         'persistence',
         'sync',
+        'contas',
         'render',
         'input',
         'ui',

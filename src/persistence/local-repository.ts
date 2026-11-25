@@ -98,16 +98,18 @@ export class LocalRepository {
 
   static async open(
     factory: IDBFactory = indexedDB,
-    options: { now?: () => number; logger?: Logger } = {},
+    options: { now?: () => number; logger?: Logger; name?: string } = {},
   ): Promise<LocalRepository> {
     const log = options.logger ?? createLogger('local');
+    // Cada conta tem o próprio banco (ver localDbName em core/account).
+    const name = options.name ?? DB_NAME;
     let db: Database;
     try {
-      db = await Database.open(factory, DB_NAME, DB_VERSION, upgrade);
+      db = await Database.open(factory, name, DB_VERSION, upgrade);
     } catch (first) {
       // O Safari às vezes falha na primeira abertura após atualizar: tenta de novo.
       log.warn('Primeira abertura do IndexedDB falhou; tentando de novo', first);
-      db = await Database.open(factory, DB_NAME, DB_VERSION, upgrade);
+      db = await Database.open(factory, name, DB_VERSION, upgrade);
     }
     return new LocalRepository(db, log, options.now ?? Date.now);
   }

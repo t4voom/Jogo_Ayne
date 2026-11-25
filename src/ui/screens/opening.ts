@@ -20,7 +20,8 @@ const STARS: readonly [number, number, number, number][] = [
   [4, 52, 6, 2.8],
 ];
 
-export function createOpeningScreen(onEnter: () => void | Promise<void>): Screen {
+/** Céu, estrelinhas e o castelo ao entardecer (fundo da abertura e da tela de entrar). */
+export function openingBackdrop(): HTMLElement[] {
   const scene = h('div', {
     class: 'opening-scene',
     html: roomBackgroundSvg({ ...createRoom('fachada', () => 'x', 0), ambience: 'entardecer' }),
@@ -35,6 +36,11 @@ export function createOpeningScreen(onEnter: () => void | Promise<void>): Screen
       }),
     ),
   );
+  return [scene, stars];
+}
+
+/** Coroa brilhando + título "O Castelo da Aynebrenda". */
+export function openingHeader(subtitle: string): HTMLElement {
   const crown = h(
     'div',
     { class: 'opening-crown', attrs: { 'aria-hidden': 'true' } },
@@ -44,6 +50,21 @@ export function createOpeningScreen(onEnter: () => void | Promise<void>): Screen
     h('span', { class: 'opening-sparkle s2' }),
     h('span', { class: 'opening-sparkle s3' }),
   );
+  return h(
+    'div',
+    { class: 'opening-content' },
+    crown,
+    h(
+      'h1',
+      { id: 'opening-title', class: 'opening-title' },
+      h('span', { class: 'opening-title-small', text: 'O Castelo da' }),
+      h('span', { class: 'opening-title-name', text: 'Aynebrenda' }),
+    ),
+    h('p', { class: 'opening-subtitle', text: subtitle }),
+  );
+}
+
+export function createOpeningScreen(onEnter: () => void | Promise<void>): Screen {
   const enter = h(
     'button',
     {
@@ -61,20 +82,8 @@ export function createOpeningScreen(onEnter: () => void | Promise<void>): Screen
   const el = h(
     'main',
     { class: 'opening', attrs: { 'aria-labelledby': 'opening-title' } },
-    scene,
-    stars,
-    h(
-      'div',
-      { class: 'opening-content' },
-      crown,
-      h(
-        'h1',
-        { id: 'opening-title', class: 'opening-title' },
-        h('span', { class: 'opening-title-small', text: 'O Castelo da' }),
-        h('span', { class: 'opening-title-name', text: 'Aynebrenda' }),
-      ),
-      h('p', { class: 'opening-subtitle', text: 'Decore cada cantinho do seu reino ✨' }),
-    ),
+    ...openingBackdrop(),
+    openingHeader('Decore cada cantinho do seu reino ✨'),
     h(
       'div',
       { class: 'opening-bottom' },

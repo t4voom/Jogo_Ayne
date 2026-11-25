@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { openRoom } from './helpers';
 
 test('tira foto do cômodo e ela aparece no álbum', async ({ page }) => {

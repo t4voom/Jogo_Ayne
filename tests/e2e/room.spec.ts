@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { centerOf, items, openRoom, skipTutorial, touchGesture } from './helpers';
 
 test.describe('cômodo', () => {
@@ -121,11 +121,13 @@ test.describe('cômodo', () => {
 test('abertura → mapa → cômodo', async ({ page }) => {
   await page.goto('./');
   await page.getByRole('button', { name: 'Entrar no castelo' }).click({ force: true });
-  await page.getByRole('button', { name: 'Jogar só neste aparelho' }).click();
   await expect(page.getByRole('heading', { name: 'Meu Castelo' })).toBeVisible();
   await page.getByRole('button', { name: 'Abrir Quarto da Princesa' }).click();
   await expect(page.getByRole('heading', { name: /Quarto da Princesa/ })).toBeVisible();
   await skipTutorial(page);
+  // Com um item selecionado, o botão do mapa também volta direto ao mapa.
+  await page.getByRole('button', { name: 'Adicionar Trono real' }).click({ force: true });
+  await expect(page.locator('.stage-items .item.is-selected')).toHaveCount(1);
   await page.getByRole('button', { name: 'Voltar ao mapa do castelo' }).click();
   await expect(page.getByRole('heading', { name: 'Meu Castelo' })).toBeVisible();
 });

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('abre o castelo e mostra o título', async ({ page }) => {
   await page.goto('./');

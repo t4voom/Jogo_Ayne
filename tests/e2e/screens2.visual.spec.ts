@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test } from './fixtures';
 
 const out = process.env.SHOTS_DIR ?? 'test-results/shots';
 

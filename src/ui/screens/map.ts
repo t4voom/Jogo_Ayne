@@ -107,7 +107,7 @@ export async function createMapScreen(ctx: GameContext): Promise<Screen> {
     return card;
   };
 
-  const sync = createSyncIndicator(ctx.cloud);
+  const sync = createSyncIndicator(ctx.cloud, ctx.saveNow);
   const pill = createStarsPill(ctx.store, ctx.progression, () => {
     void ctx.router.go({ name: 'achievements' });
   });

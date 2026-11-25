@@ -2,7 +2,7 @@ import type { CatalogItem } from '../catalog/types';
 import { createLogger } from '../core/log';
 import type { RoomId } from '../core/model';
 import { counterAdd, type Profile } from '../core/profile';
-import { mensagemCarinhosa } from '../content/mensagens';
+import { MENSAGENS, MENSAGENS_GERAIS, mensagemCarinhosa } from '../content/mensagens';
 import {
   ACHIEVEMENT_REWARD,
   achievementViews,
@@ -51,12 +51,20 @@ export class Progression {
   private lastLove: string | undefined;
   private evaluating = false;
 
+  private readonly now: () => Date;
+  private readonly random: () => number;
+  /** Só a conta da Ayne recebe a carta e as mensagens dirigidas a ela. */
+  readonly forAyne: boolean;
+
   constructor(
     private readonly store: Store,
     private readonly deviceId: () => string,
-    private readonly now: () => Date = () => new Date(),
-    private readonly random: () => number = Math.random,
-  ) {}
+    options: { now?: () => Date; random?: () => number; forAyne?: boolean } = {},
+  ) {
+    this.now = options.now ?? (() => new Date());
+    this.random = options.random ?? Math.random;
+    this.forAyne = options.forAyne ?? true;
+  }
 
   on(listener: (e: ProgressionEvent) => void): () => void {
     this.listeners.add(listener);
@@ -117,7 +125,7 @@ export class Progression {
   }
 
   get letterReady(): boolean {
-    return allAchievementsDone(this.snapshot());
+    return this.forAyne && allAchievementsDone(this.snapshot());
   }
 
   // ------------------------------------------------------------- ações
@@ -173,7 +181,8 @@ export class Progression {
   }
 
   private love(): void {
-    const message = mensagemCarinhosa(this.random, this.lastLove);
+    const pool = this.forAyne ? MENSAGENS : MENSAGENS_GERAIS;
+    const message = mensagemCarinhosa(this.random, this.lastLove, pool);
     this.lastLove = message;
     this.emit({ type: 'love', message });
   }
@@ -248,7 +257,8 @@ export class Progression {
         this.emit({ type: 'achievement', title: a.title, id: a.id });
         this.emit({ type: 'stars', amount: ACHIEVEMENT_REWARD, reason: 'achievement' });
       }
-      if (!hadAll && allAchievementsDone(this.snapshot())) this.emit({ type: 'letter-ready' });
+      if (this.forAyne && !hadAll && allAchievementsDone(this.snapshot()))
+        this.emit({ type: 'letter-ready' });
     } finally {
       this.evaluating = false;
     }

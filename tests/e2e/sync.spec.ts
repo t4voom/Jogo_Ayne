@@ -1,32 +1,14 @@
-import { expect, test, type Page } from '@playwright/test';
-import { createFakeAppsScript } from '../../apps-script/test/fake-apps-script';
-import { FAKE_PIN, connectFakeSheets } from './fake-sheets';
+import { expect, test } from './fixtures';
+import { SENHA, connectFakeSheets, createAccount, seedSession } from './fake-sheets';
 import { items, skipTutorial } from './helpers';
 
-async function enterWithPin(page: Page, pin: string) {
-  await page.goto('./');
-  await page.getByRole('button', { name: 'Entrar no castelo' }).click({ force: true });
-  await expect(page.getByRole('dialog', { name: 'Código do castelo' })).toBeVisible();
-  await page.getByRole('textbox', { name: 'Código do castelo' }).fill(pin);
-  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-}
-
 test.describe('sincronização com a planilha', () => {
-  test('código errado mostra erro; certo entra no castelo', async ({ page, context }) => {
-    await connectFakeSheets(context);
-    await enterWithPin(page, '000000');
-    await expect(page.getByRole('alert')).toContainText('incorreto');
-    await page.getByRole('textbox', { name: 'Código do castelo' }).fill(FAKE_PIN);
-    await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Meu Castelo' })).toBeVisible();
-  });
-
-  test('o castelo aparece igual no outro aparelho', async ({ browser }) => {
-    const server = createFakeAppsScript({ pin: FAKE_PIN });
+  test('o castelo aparece igual no outro aparelho da mesma conta', async ({ browser }) => {
     const tablet = await browser.newContext();
-    await connectFakeSheets(tablet, server);
+    const server = await connectFakeSheets(tablet);
+    await seedSession(tablet, createAccount(server, 'ayne', SENHA, { legado: true }));
     const pageA = await tablet.newPage();
-    await enterWithPin(pageA, FAKE_PIN);
+    await pageA.goto('./#/mapa');
     await pageA.getByRole('button', { name: 'Abrir Quarto da Princesa' }).click();
     await skipTutorial(pageA);
     await pageA.getByRole('button', { name: 'Adicionar Trono real' }).click({ force: true });
@@ -38,10 +20,14 @@ test.describe('sincronização com a planilha', () => {
     );
     expect(server.spreadsheet.getSheetByName('saves')!.dataRows().length).toBeGreaterThan(0);
 
+    // No celular, a Ayne entra com usuário e senha.
     const phone = await browser.newContext();
     await connectFakeSheets(phone, server);
     const pageB = await phone.newPage();
-    await enterWithPin(pageB, FAKE_PIN);
+    await pageB.goto('./');
+    await pageB.getByRole('textbox', { name: 'Nome de usuário' }).fill('Ayne');
+    await pageB.getByLabel('Senha', { exact: true }).fill(SENHA);
+    await pageB.getByRole('button', { name: 'Entrar no castelo' }).click();
     await pageB.getByRole('button', { name: 'Abrir Quarto da Princesa' }).click();
     await expect(pageB.locator('.stage-items .item[data-item-id="trono"]')).toHaveCount(1);
     await expect(items(pageB)).toHaveCount(await items(pageA).count());
@@ -52,10 +38,10 @@ test.describe('sincronização com a planilha', () => {
   test('offline: salva no aparelho e sincroniza quando a internet volta', async ({
     page,
     context,
+    backend,
+    network,
   }) => {
-    const network = { offline: false };
-    const server = await connectFakeSheets(context, undefined, network);
-    await enterWithPin(page, FAKE_PIN);
+    await page.goto('./#/mapa');
     await page.getByRole('button', { name: 'Abrir Quarto da Princesa' }).click();
     await skipTutorial(page);
     network.offline = true;
@@ -66,12 +52,12 @@ test.describe('sincronização com a planilha', () => {
       'offline',
       { timeout: 15_000 },
     );
-    expect(server.spreadsheet.getSheetByName('saves')?.dataRows().length ?? 0).toBe(0);
+    expect(backend.spreadsheet.getSheetByName('saves')?.dataRows().length ?? 0).toBe(0);
     network.offline = false;
     await context.setOffline(false);
     await expect(page.locator('.room-screen .sync-pill')).toHaveAttribute('data-status', 'synced', {
       timeout: 15_000,
     });
-    expect(server.spreadsheet.getSheetByName('saves')!.dataRows().length).toBeGreaterThan(0);
+    expect(backend.spreadsheet.getSheetByName('saves')!.dataRows().length).toBeGreaterThan(0);
   });
 });

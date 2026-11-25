@@ -60,6 +60,8 @@ export const ICONS = {
   restore: `<path ${S} d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9"/><path ${S} d="M4.5 4.5V9H9M12 8v4.5l3 2"/>`,
   info: `<circle ${S} cx="12" cy="12" r="8.5"/><path ${S} d="M12 11v5"/><circle ${F} cx="12" cy="8" r="1.2"/>`,
   key: `<circle ${S} cx="8" cy="12" r="4"/><path ${S} d="M12 12h8.5M17.5 12v3M20.5 12v2"/>`,
+  user: `<circle ${S} cx="12" cy="8.5" r="3.5"/><path ${S} d="M5 19.5a7 7 0 0 1 14 0"/>`,
+  logout: `<path ${S} d="M14 4.5h3A2.5 2.5 0 0 1 19.5 7v10a2.5 2.5 0 0 1-2.5 2.5h-3"/><path ${S} d="M10.5 8 6.5 12l4 4M6.5 12H15"/>`,
   dots: `<circle ${F} cx="6" cy="12" r="1.8"/><circle ${F} cx="12" cy="12" r="1.8"/><circle ${F} cx="18" cy="12" r="1.8"/>`,
   chevronUp: `<path ${S} d="m6 15 6-6 6 6"/>`,
   chevronDown: `<path ${S} d="m6 9 6 6 6-6"/>`,

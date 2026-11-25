@@ -30,4 +30,10 @@ export interface GameContext {
   /** Garante que o cômodo existe no estado (cria com a decoração inicial). */
   ensureRoom(roomId: RoomId): Room;
   isRoomUnlocked(roomId: RoomId): boolean;
+  /** Nome de quem está jogando (null sem planilha: castelo só deste aparelho). */
+  readonly playerName: string | null;
+  /** É a conta da Ayne? (carta, mensagens e falas dirigidas a ela) */
+  readonly forAyne: boolean;
+  /** Grava agora no aparelho e tenta subir para a planilha (ex.: antes de sair). */
+  readonly saveNow: () => Promise<void>;
 }

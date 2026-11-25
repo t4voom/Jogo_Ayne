@@ -41,7 +41,7 @@ class Device implements SyncHost {
   future = 0;
   online = true;
   failNext: ('network' | 'http')[] = [];
-  pin = PIN;
+  token = TOKEN;
   readonly outboxStore = new MemoryOutbox();
   readonly engine: SyncEngine;
   readonly statuses: SyncSnapshot[] = [];
@@ -62,7 +62,7 @@ class Device implements SyncHost {
       if (fail === 'http') throw new ApiError('http', 'A planilha respondeu 500');
       return env.gs.doPost({ postData: { contents: body } }).getContent();
     };
-    const api = new SheetsApi(transport, () => ({ pin: this.pin, deviceId: name }));
+    const api = new SheetsApi(transport, () => ({ token: this.token, deviceId: name }));
     this.engine = new SyncEngine(api, this, this.outboxStore, {
       now: () => clock.now,
       random: () => 0.5,
@@ -127,11 +127,27 @@ class Device implements SyncHost {
 
 let env: FakeEnv;
 let clock: { now: number };
+/** Token da conta da Ayne (os dois aparelhos entram na mesma conta). */
+let TOKEN = '';
 
 beforeEach(() => {
   vi.useFakeTimers();
   env = createFakeAppsScript({ pin: PIN });
   clock = { now: 1_000_000 };
+  const res = JSON.parse(
+    env.gs
+      .doPost({
+        postData: {
+          contents: JSON.stringify({
+            action: 'signup',
+            deviceId: 'tablet',
+            payload: { usuario: 'ayne', senha: 'segredo123', convite: PIN, legado: true },
+          }),
+        },
+      })
+      .getContent(),
+  ) as { data: { token: string } };
+  TOKEN = res.data.token;
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -303,15 +319,15 @@ describe('SyncEngine', () => {
     expect(b.rooms.get('baile')?.items).toEqual(items);
   });
 
-  it('PIN errado: pede o código e não insiste; com o código certo sincroniza', async () => {
+  it('sessão inválida: pede para entrar de novo e não insiste; com o token certo sincroniza', async () => {
     const a = new Device('tablet', env, clock);
-    a.pin = 'errado';
+    a.token = 'ayne.1.1.' + 'A'.repeat(44);
     await a.engine.start();
-    expect(a.engine.state.status).toBe('needs-pin');
+    expect(a.engine.state.status).toBe('needs-login');
     a.edit('quarto', 1);
     await settle();
     expect(a.calls).toBe(1);
-    a.pin = PIN;
+    a.token = TOKEN;
     await a.engine.credentialsChanged();
     expect(a.engine.state.status).toBe('synced');
     expect(a.rooms.get('quarto')?.revision).toBe(1);

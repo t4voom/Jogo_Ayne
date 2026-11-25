@@ -30,7 +30,7 @@ import { decodeProfile, decodeRoom, encodeProfile, encodeRoom } from './wire';
  *    outro vira "versão anterior" restaurável. Nada é perdido.
  */
 
-export type SyncStatus = 'disabled' | 'needs-pin' | 'synced' | 'syncing' | 'offline' | 'error';
+export type SyncStatus = 'disabled' | 'needs-login' | 'synced' | 'syncing' | 'offline' | 'error';
 
 export interface SyncSnapshot {
   readonly status: SyncStatus;
@@ -523,7 +523,7 @@ export class SyncEngine {
     const pending = this.entries.size;
     let status: SyncStatus;
     if (!this.api) status = 'disabled';
-    else if (this.blocked !== null) status = 'needs-pin';
+    else if (this.blocked !== null) status = 'needs-login';
     else if (this.running || this.pulling) status = 'syncing';
     else if (this.failure?.kind === 'network') status = 'offline';
     else if (this.failure?.kind === 'error') status = 'error';

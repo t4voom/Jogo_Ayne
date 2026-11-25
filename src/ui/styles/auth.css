@@ -1,0 +1,215 @@
+/* Tela de entrar / criar conta (mesmo cenário da abertura). */
+.auth-screen {
+  transition: opacity 260ms var(--ease-soft);
+}
+
+.auth-screen.is-leaving {
+  opacity: 0;
+}
+
+.auth-scroll {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding-bottom: calc(var(--safe-bottom) + var(--space-5));
+}
+
+/* Coroa e título menores: o formulário precisa caber com o teclado aberto. */
+.auth-screen .opening-crown {
+  width: clamp(64px, 11vh, 104px);
+}
+
+.auth-screen .opening-title-name {
+  font-size: clamp(2.6rem, 7vh, 4.4rem);
+}
+
+.auth-card {
+  width: min(400px, calc(100% - 2 * var(--space-5)));
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  background: rgb(255 255 255 / 92%);
+  border: 2px solid rgb(255 255 255 / 95%);
+  box-shadow: var(--shadow-lg);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.auth-card.is-shaking {
+  animation: auth-shake 420ms ease-in-out;
+}
+
+@keyframes auth-shake {
+  20%,
+  60% {
+    transform: translateX(-8px);
+  }
+  40%,
+  80% {
+    transform: translateX(8px);
+  }
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--c-rose-100);
+}
+
+.auth-tab {
+  min-height: var(--touch-min);
+  border-radius: var(--radius-pill);
+  font-weight: var(--fw-black);
+  color: var(--color-text-soft);
+  transition:
+    background var(--dur-fast),
+    color var(--dur-fast);
+}
+
+.auth-tab[aria-pressed='true'] {
+  background: #fff;
+  color: var(--color-primary-strong);
+  box-shadow: var(--shadow-xs);
+}
+
+.auth-field {
+  display: grid;
+  gap: 4px;
+}
+
+.auth-field[hidden] {
+  display: none;
+}
+
+.auth-label {
+  font-weight: var(--fw-black);
+  font-size: var(--fs-sm);
+  color: var(--color-text-soft);
+  padding-left: var(--space-2);
+}
+
+.auth-control {
+  position: relative;
+}
+
+.auth-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 52px 0 var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--c-rose-200);
+  background: var(--c-rose-50);
+  /* 16px+ evita o zoom automático do Safari ao focar. */
+  font-size: max(16px, var(--fs-md));
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+  outline: none;
+  transition:
+    border-color var(--dur-fast),
+    box-shadow var(--dur-fast);
+}
+
+.auth-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgb(232 110 168 / 18%);
+}
+
+.auth-eye {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-text-muted);
+}
+
+.auth-eye[aria-pressed='true'] {
+  color: var(--color-primary-strong);
+}
+
+.auth-hint {
+  padding-left: var(--space-2);
+  color: var(--color-text-muted);
+  font-weight: var(--fw-bold);
+}
+
+.auth-error {
+  min-height: 1.3em;
+  color: var(--color-danger);
+  font-weight: var(--fw-bold);
+  text-align: center;
+}
+
+.auth-error:empty {
+  min-height: 0;
+}
+
+.auth-submit {
+  min-height: 56px;
+  font-size: var(--fs-lg);
+}
+
+.auth-note {
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--color-text-soft);
+}
+
+/* Telas baixas (celular deitado, teclado aberto): cabeçalho compacto. */
+@media (max-height: 760px) {
+  .auth-screen .opening-content {
+    padding-top: calc(var(--safe-top) + var(--space-3));
+    gap: 0;
+  }
+
+  .auth-screen .opening-crown {
+    width: 56px;
+  }
+
+  .auth-screen .opening-title-small {
+    font-size: 1.5rem;
+  }
+
+  .auth-screen .opening-title-name {
+    font-size: 2.6rem;
+  }
+
+  .auth-screen .opening-subtitle {
+    display: none;
+  }
+
+  .auth-card {
+    gap: var(--space-2);
+    padding: var(--space-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-screen,
+  .auth-card.is-shaking {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Folha de trocar senha (dentro do modal). */
+.auth-sheet {
+  display: grid;
+  gap: var(--space-3);
+  width: min(400px, 100%);
+  margin: 0 auto;
+}

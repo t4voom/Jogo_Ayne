@@ -28,6 +28,8 @@ do Google.
 - **Tutorial** com a Fadinha Luz na primeira vez.
 - **Nunca perde nada**: salva no aparelho na hora, sincroniza com a planilha
   e funciona offline.
+- **Contas**: cada pessoa entra com usuário e senha e tem o próprio castelo,
+  igualzinho em todos os aparelhos em que entrar.
 
 ---
 
@@ -71,14 +73,30 @@ abra o endereço "Network" que aparecer.
 | --------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------- |
 | `VITE_SHEETS_API_URL` | `.env.local` (local) / GitHub Secrets (CI) | URL do App da Web do Apps Script (termina em `/exec`). Vazia = jogo funciona só no aparelho. |
 
-Nunca versione `.env.local`, PINs ou URLs privadas. O passo a passo da planilha
+Nunca versione `.env.local`, PINs, senhas ou URLs privadas. O passo a passo da planilha
 está em [`apps-script/README.md`](apps-script/README.md).
 
-### Sincronização (tablet ↔ celular)
+### Contas e sincronização (tablet ↔ celular)
+
+Com a planilha configurada, o jogo abre na tela **Entrar / Criar conta**:
+
+- **Criar conta** pede nome de usuário, senha e o **código de convite** (a
+  propriedade `PIN` da planilha). Quem tem o link mas não tem o convite não
+  cria conta.
+- Cada conta tem **o próprio castelo**. Várias contas podem usar o mesmo
+  aparelho; cada uma tem o seu banco local.
+- A conta da Ayne é a de usuário `CONTA_DA_AYNE`, em
+  [`src/content/carta.ts`](src/content/carta.ts) (padrão `ayne`). Só ela
+  recebe a carta e as mensagens carinhosas, e ela herda o castelo feito antes
+  das contas existirem.
+- Em **Configurações → Conta e nuvem** dá para trocar a senha e sair da
+  conta. Esqueceu a senha? Veja
+  [`apps-script/README.md`](apps-script/README.md#esqueci-a-senha).
+- O primeiro acesso de cada aparelho precisa de internet; depois, tudo
+  funciona offline.
 
 O jogo salva tudo primeiro no aparelho (IndexedDB) e sincroniza em segundo
-plano com uma planilha do Google. Com a planilha configurada, na primeira vez
-aparece **"Digite o código do castelo"**; o indicador no topo mostra se está
+plano com uma planilha do Google. O indicador no topo mostra se está
 tudo salvo (☁️✓), enviando (🔄), sem internet (☁️ cinza — salvo no aparelho) ou
 com erro (⚠️, toque para detalhes). Se os dois aparelhos mexerem no mesmo
 cômodo sem internet, fica a versão mais recente e a outra aparece em
@@ -125,11 +143,13 @@ O workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda
 2. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
    Hoje o Pages está como "deploy from a branch"; precisa trocar.
 3. Siga [`apps-script/README.md`](apps-script/README.md) para criar a
-   planilha, definir o PIN e publicar o Apps Script.
+   planilha, definir o código de convite (PIN) e publicar o Apps Script.
 4. Cadastre o secret `VITE_SHEETS_API_URL` (abaixo) e rode o workflow de novo
    (aba **Actions → CI/CD → Run workflow**).
-5. No celular e no tablet da Ayne, abra o link, instale na tela inicial e
-   digite o código do castelo.
+5. No celular e no tablet da Ayne, abra o link e instale na tela inicial.
+   Num deles, toque em **Criar conta** (usuário `ayne`, senha dela e o
+   código de convite). No outro, é só **Entrar** com o mesmo usuário e
+   senha.
 6. Escreva a carta em [`src/content/carta.ts`](src/content/carta.ts) 💌
 
 Configuração única no GitHub:
@@ -181,7 +201,8 @@ As decisões estão em [`docs/adr/`](docs/adr/README.md) e as mudanças no
 
 ## A carta surpresa 💌
 
-Quando a Ayne completar **todas as conquistas**, abre uma carta animada.
+Quando a Ayne completar **todas as conquistas** (na conta dela), abre uma
+carta animada.
 O texto fica em [`src/content/carta.ts`](src/content/carta.ts): troque o
 título, os parágrafos e a assinatura e mude `PLACEHOLDER` para `false`.
 (O repositório é público, então o texto fica visível no GitHub.) As mensagens

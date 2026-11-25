@@ -10,6 +10,8 @@ import './ui/styles/cloud.css';
 import { installSharedDefs } from './art/defs';
 import { AudioEngine } from './audio/engine';
 import { ArtRegistry } from './art/registry';
+import { CONTA_DA_AYNE } from './content/carta';
+import { LEGACY_ACCOUNT_ID, isAyneAccount, localDbName, type Session } from './core/account';
 import { randomId } from './core/ids';
 import { createLogger, logHub } from './core/log';
 import type { Room, RoomId } from './core/model';
@@ -20,6 +22,8 @@ import { Progression } from './app/progression';
 import { setupSync } from './app/sync-wiring';
 import { Autosaver } from './persistence/autosave';
 import { LocalRepository, requestPersistentStorage } from './persistence/local-repository';
+import { deviceStore, sessionStore } from './persistence/session-store';
+import { fetchTransport } from './persistence/sheets-api';
 import { GameActions } from './state/actions';
 import { Store, type GameState } from './state/store';
 import type { GameContext } from './ui/context';
@@ -29,7 +33,7 @@ import { Haptics } from './ui/haptics';
 import { setupPwa } from './ui/pwa';
 import { captureInstallPrompt } from './ui/install-banner';
 import { installRewardFeedback } from './ui/reward-feedback';
-import { Router, type Route, type Screen } from './ui/router';
+import { Router, routeToHash, type Route, type Screen } from './ui/router';
 import { createOpeningScreen } from './ui/screens/opening';
 import { Toaster } from './ui/toast';
 
@@ -51,10 +55,19 @@ function hideBootScreen(): void {
   }, 600);
 }
 
-/** Abre o banco local; se o navegador não deixar, segue só em memória. */
-async function openRepository(toast: Toaster): Promise<LocalRepository | null> {
+/** Este aparelho (o mesmo para todas as contas). */
+function resolveDeviceId(): string {
+  const known = deviceStore.get();
+  if (known) return known;
+  const id = randomId();
+  deviceStore.set(id);
+  return id;
+}
+
+/** Abre o banco local da conta; se o navegador não deixar, segue só em memória. */
+async function openRepository(toast: Toaster, name: string): Promise<LocalRepository | null> {
   try {
-    return await LocalRepository.open();
+    return await LocalRepository.open(indexedDB, { name });
   } catch (error) {
     log.error('IndexedDB indisponível; jogando sem salvar no aparelho', error);
     toast.show(
@@ -84,8 +97,33 @@ async function boot(): Promise<void> {
     e.preventDefault();
   });
 
+  // ------------------------------------------------------------ conta
+  // Com a planilha configurada, cada pessoa entra com a própria conta e tem o
+  // próprio castelo (e o próprio banco no aparelho). Sem planilha, joga-se
+  // só neste aparelho, no castelo de sempre.
+  const url = import.meta.env.VITE_SHEETS_API_URL?.trim() ?? '';
+  const transport = url ? fetchTransport(url) : null;
+  const deviceId = resolveDeviceId();
+  let session: Session | null = transport ? sessionStore.load() : null;
+  let justEntered = false;
+  if (transport && !session) {
+    hideBootScreen();
+    const { runAuthScreen } = await import('./ui/screens/auth');
+    session = await runAuthScreen(app, { transport, deviceId, contaDaAyne: CONTA_DA_AYNE });
+    if (!sessionStore.save(session)) {
+      toast.show(
+        'Não consegui lembrar a sua conta neste navegador; vai pedir para entrar de novo.',
+        {
+          tone: 'warn',
+        },
+      );
+    }
+    justEntered = true;
+  }
+  const forAyne = session ? isAyneAccount(session, CONTA_DA_AYNE) : true;
+
   // ------------------------------------------------------------ dados
-  const repo = await openRepository(toast);
+  const repo = await openRepository(toast, localDbName(session?.accountId ?? LEGACY_ACCOUNT_ID));
   const now = Date.now();
   const loaded = repo ? await repo.loadRooms() : { rooms: [], quarantined: [] };
   const profile = (repo ? await repo.loadProfile() : null) ?? createProfile(now);
@@ -141,8 +179,17 @@ async function boot(): Promise<void> {
 
   // ----------------------------------------- sincronização com a planilha
   const photos = new PhotoStore(repo);
-  const cloud = await setupSync({ store, repo, toast, photos, flushLocal: () => flushLocal() });
-  const progression = new Progression(store, () => cloud.deviceId);
+  const cloud = await setupSync({
+    store,
+    repo,
+    toast,
+    photos,
+    flushLocal: () => flushLocal(),
+    transport,
+    session,
+    deviceId,
+  });
+  const progression = new Progression(store, () => cloud.deviceId, { forAyne });
   progression.attach();
 
   // ------------------------------------------------------------- telas
@@ -161,13 +208,7 @@ async function boot(): Promise<void> {
     const c = ctx;
     switch (route.name) {
       case 'opening':
-        return createOpeningScreen(async () => {
-          if (c.cloud.shouldAskPin) {
-            const { openPinDialog } = await import('./ui/pin-dialog');
-            await openPinDialog(c.cloud, { canSkip: true });
-          }
-          await c.router.go({ name: 'map' });
-        });
+        return createOpeningScreen(() => c.router.go({ name: 'map' }));
       case 'room': {
         const { createRoomScreen } = await import('./ui/screens/room');
         return createRoomScreen(c, route.roomId);
@@ -208,6 +249,16 @@ async function boot(): Promise<void> {
     repo,
     ensureRoom,
     isRoomUnlocked,
+    playerName: session?.nome ?? null,
+    forAyne,
+    saveNow: async () => {
+      await flushLocal();
+      if (!cloud.enabled) return;
+      await Promise.race([
+        cloud.engine.flushNow().catch(() => undefined),
+        new Promise((r) => window.setTimeout(r, 4000)),
+      ]);
+    },
   };
 
   installRewardFeedback({ progression, toast, haptics, router, sound });
@@ -215,8 +266,18 @@ async function boot(): Promise<void> {
     sound.play('page');
   });
   progression.evaluate();
+  // Acabou de entrar: vai direto para o mapa (a abertura já foi a tela de entrar).
+  if (justEntered) history.replaceState(null, '', routeToHash({ name: 'map' }));
   await router.start();
   hideBootScreen();
+  if (justEntered && session) {
+    toast.show(
+      forAyne
+        ? `Bem-vinda ao seu castelo, ${session.nome}! 👑`
+        : `Boas-vindas, ${session.nome}! 👑`,
+      { tone: 'love', icon: 'heart' },
+    );
+  }
 
   setupPwa({
     onUpdateReady: (update) => {

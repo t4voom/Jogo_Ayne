@@ -22,105 +22,6 @@
   margin-top: var(--space-4);
 }
 
-/* --------------------------------------------------------- PIN */
-.pin {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-2);
-}
-
-.pin.is-shaking {
-  animation: map-shake 420ms ease-in-out;
-}
-
-.pin-art {
-  position: relative;
-  width: 96px;
-  height: 96px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: radial-gradient(circle, #fff 0, var(--c-rose-100) 60%, var(--c-lilac-100));
-  box-shadow: var(--shadow-md);
-  color: var(--color-primary-strong);
-  margin-bottom: var(--space-2);
-}
-
-.pin-castle {
-  width: 52px;
-  height: 52px;
-}
-
-.pin-key {
-  position: absolute;
-  right: 4px;
-  bottom: 6px;
-  width: 34px;
-  height: 34px;
-  padding: 6px;
-  border-radius: 50%;
-  background: var(--c-gold-300);
-  color: var(--c-plum-800);
-  box-shadow: var(--shadow-sm);
-  animation: key-wiggle 2.6s ease-in-out infinite;
-}
-
-@keyframes key-wiggle {
-  50% {
-    transform: rotate(-18deg);
-  }
-}
-
-.pin-field {
-  position: relative;
-  width: min(300px, 100%);
-}
-
-.pin-input {
-  width: 100%;
-  min-height: 60px;
-  padding: 0 56px 0 var(--space-5);
-  border-radius: var(--radius-lg);
-  border: 2.5px solid var(--c-rose-200);
-  background: var(--c-rose-50);
-  font-size: 28px;
-  font-weight: var(--fw-black);
-  letter-spacing: 0.3em;
-  text-align: center;
-  color: var(--color-text);
-  outline: none;
-  transition: border-color var(--dur-fast);
-}
-
-.pin-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px rgb(232 110 168 / 18%);
-}
-
-.pin-eye {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: var(--color-text-muted);
-}
-
-.pin-error {
-  min-height: 1.4em;
-  color: var(--color-danger);
-  font-weight: var(--fw-bold);
-  text-align: center;
-}
-
-.pin-submit {
-  min-width: 220px;
-}
-
 .btn.is-busy .icon {
   animation: spin 1s linear infinite;
 }
@@ -166,7 +67,7 @@
 }
 
 .sync-pill[data-status='error'],
-.sync-pill[data-status='needs-pin'] {
+.sync-pill[data-status='needs-login'] {
   color: var(--c-gold-600);
   background: var(--c-gold-100);
 }
@@ -229,7 +130,7 @@
 }
 
 .sync-hero.is-error,
-.sync-hero.is-needs-pin {
+.sync-hero.is-needs-login {
   background: var(--c-gold-100);
   color: var(--c-gold-600);
 }

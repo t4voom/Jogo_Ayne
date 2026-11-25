@@ -1,9 +1,11 @@
 import type { BrowserContext } from '@playwright/test';
-import { createFakeAppsScript, type FakeEnv } from '../../apps-script/test/fake-apps-script';
+import { createFakeAppsScript, post, type FakeEnv } from '../../apps-script/test/fake-apps-script';
+import type { Session } from '../../src/core/account';
 
 /** URL usada no build dos testes (ver playwright.config.ts). */
 export const FAKE_SHEETS_URL = 'https://planilha.teste/exec';
 export const FAKE_PIN = '246810';
+export const SENHA = 'coroa123';
 
 /**
  * "Planilha" de mentira para os e2e: intercepta as chamadas do jogo e
@@ -41,4 +43,27 @@ export async function connectFakeSheets(
     });
   });
   return server;
+}
+
+/** Cria uma conta direto na planilha falsa (como se tivesse sido criada antes). */
+export function createAccount(
+  env: FakeEnv,
+  usuario: string,
+  senha = SENHA,
+  options: { legado?: boolean } = {},
+): Session {
+  const res = post(env, {
+    action: 'signup',
+    deviceId: 'setup',
+    payload: { usuario, senha, convite: FAKE_PIN, legado: options.legado ?? false },
+  }) as { ok: boolean; data?: Session };
+  if (!res.ok || !res.data) throw new Error(`Não criou a conta de teste: ${JSON.stringify(res)}`);
+  return res.data;
+}
+
+/** Deixa o aparelho já logado nessa conta (antes de o jogo carregar). */
+export async function seedSession(context: BrowserContext, session: Session): Promise<void> {
+  await context.addInitScript((value) => {
+    if (!localStorage.getItem('castelo:sessao')) localStorage.setItem('castelo:sessao', value);
+  }, JSON.stringify(session));
 }

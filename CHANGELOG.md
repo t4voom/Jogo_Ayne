@@ -4,6 +4,33 @@ Todas as mudanças relevantes do projeto. Formato baseado em
 [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e versões em
 [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.1.0] — 2026-11-25
+
+### Contas: cada pessoa tem o próprio castelo
+
+- Tela de **entrar / criar conta** com usuário e senha, no cenário da
+  abertura. Para criar conta é preciso o **código de convite** (a propriedade
+  `PIN` da planilha).
+- Cada conta tem o próprio castelo: cômodos, estrelinhas, missões, álbum e
+  banco no aparelho. Várias contas podem usar o mesmo aparelho.
+- O castelo salvo antes das contas fica com a conta da Ayne
+  (`CONTA_DA_AYNE` em `src/content/carta.ts`). No aparelho dela, nada muda
+  de lugar.
+- Carta surpresa, mensagens carinhosas e a fala "Princesa Ayne" só na conta
+  dela; as outras contas recebem mensagens gerais.
+- Configurações → Conta e nuvem: quem está jogando, **trocar senha** e
+  **sair da conta**. Quando a sessão termina (senha trocada em outro
+  aparelho), a nuvem avisa e leva para entrar de novo.
+- `Code.gs` v2:
+  - aba `contas` com senhas em hash (HMAC-SHA256 com sal e segredo do
+    servidor) e tokens de sessão assinados;
+  - isolamento por conta e senha provisória pela coluna `redefinirSenha`;
+  - qualquer GET mostra a saúde do serviço.
+- Correção: com um item selecionado, o botão do mapa só tirava a seleção.
+  Agora ele volta ao mapa.
+- ADR 0014; e2e de cadastro, login, troca de senha, contas separadas no
+  mesmo aparelho e sessão expirada.
+
 ## [1.0.0] — 2026-11-24
 
 Primeira versão completa, presente para a Ayne. 👑

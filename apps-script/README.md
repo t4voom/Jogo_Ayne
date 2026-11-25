@@ -1,10 +1,14 @@
 # 📊 Backend na planilha (Google Apps Script)
 
-Este é o "servidor" do jogo: uma planilha do Google com um script que guarda o
-castelo da Ayne e deixa o tablet e o celular iguais. O jogo **funciona sem
-ele** (tudo salva no aparelho); a planilha é o que sincroniza e faz backup.
+Este é o "servidor" do jogo: uma planilha do Google com um script que guarda
+as **contas** e o castelo de cada uma, e deixa todos os aparelhos iguais. O
+jogo **funciona sem ele** (tudo salva no aparelho); a planilha é o que guarda
+as contas, sincroniza e faz backup.
 
 Tempo estimado: **15 minutos**, uma vez só.
+
+> **Já publicou a versão antiga (com o PIN)?** Vá direto para
+> [Atualizar para a versão com contas](#atualizar-para-a-versão-com-contas).
 
 ---
 
@@ -50,10 +54,11 @@ Tempo estimado: **15 minutos**, uma vez só.
    > Volte à planilha: agora existem as abas **saves**, **profile**,
    > **album** e **log**, cada uma com a linha de cabeçalho rosinha.
 
-## 4. Definir o PIN (código do castelo)
+## 4. Definir o código de convite (propriedade PIN)
 
-O PIN fica guardado **só nas propriedades do script** — nunca no código nem no
-GitHub.
+O código de convite é o que se pede para **criar uma conta** no jogo. Ele fica
+guardado **só nas propriedades do script** (com o nome `PIN`), nunca no código
+nem no GitHub.
 
 1. No editor do Apps Script: **Configurações do projeto** (engrenagem).
 2. Role até **Propriedades do script → Adicionar propriedade do script**.
@@ -62,10 +67,15 @@ GitHub.
    celular o teclado do código é numérico.
 4. **Salvar propriedades do script**.
 
-> Proteção contra chutes: depois de **5 erros** o aparelho fica bloqueado por
-> 15 min, e depois de **30 erros por hora** (somando todos) só aparelhos que já
-> acertaram antes continuam entrando. Para trocar o PIN, edite a propriedade e
-> digite o novo código em **Configurações → Código do castelo** nos aparelhos.
+> Proteção contra chutes (de senha e de convite): depois de **5 erros** o
+> aparelho fica bloqueado por 15 min, e depois de **30 erros por hora**
+> (somando todos) só aparelhos que já entraram antes continuam entrando.
+> Trocar o PIN só muda o convite: quem já tem conta continua entrando
+> normalmente.
+>
+> O script também cria sozinho uma propriedade `SEGREDO` na primeira conta.
+> **Não apague nem edite**: ela protege as senhas e as sessões. Se for
+> apagada, todo mundo precisa criar a conta de novo.
 
 ## 5. Publicar como App da Web
 
@@ -82,9 +92,9 @@ GitHub.
    > "Qualquer pessoa" é necessário para o jogo conseguir chamar sem login do
    > Google. Quem não tiver o PIN não lê nem grava nada.
 
-**Teste rápido:** abra no navegador a URL + `?action=ping`. Deve aparecer
-algo como `{"ok":true,"data":{"version":1,"configured":true},"serverTime":…}`.
-Se `configured` for `false`, o PIN não foi salvo (passo 4).
+**Teste rápido:** abra a URL no navegador. Deve aparecer algo como
+`{"ok":true,"data":{"version":2,"configured":true},"serverTime":…}`.
+Se `configured` for `false`, o código de convite não foi salvo (passo 4).
 
 ## 6. Colocar a URL no GitHub (deploy)
 
@@ -99,22 +109,74 @@ Para testar localmente, coloque a mesma URL no arquivo `.env.local` (copie de
 `.env.example`) e rode `npm run dev`.
 
 > ⚠️ A URL acaba embutida no JavaScript publicado (todo `VITE_*` acaba). Ela
-> não é um segredo de verdade; o que protege os dados é o **PIN** com o limite
-> de tentativas.
+> não é um segredo de verdade; o que protege os dados são as **senhas** e o
+> **convite**, com o limite de tentativas.
 
 ## 7. Primeiro uso nos aparelhos
 
-Ao tocar em **"Entrar no castelo"** aparece **"Digite o código do castelo"**.
-Digite o PIN em cada aparelho. Pronto: o indicador no topo mostra uma
-nuvenzinha com ✓ quando está tudo salvo na planilha.
+O jogo abre na tela **Entrar / Criar conta**.
 
-| Indicador           | Significa                                            |
-| ------------------- | ---------------------------------------------------- |
-| ☁️ com ✓            | Salvo no aparelho e na planilha                      |
-| 🔄 setinhas girando | Enviando as últimas mudanças                         |
-| ☁️ cinza riscada    | Sem internet — salvo no aparelho, sobe quando voltar |
-| ⚠️ alerta           | Erro — toque para ver detalhes e "Tentar de novo"    |
-| 🔑 chave            | Falta digitar (ou o PIN mudou)                       |
+1. No primeiro aparelho, toque em **Criar conta**: nome de usuário, senha e o
+   **código de convite** (o PIN do passo 4).
+   - A conta da Ayne deve usar o usuário definido em `CONTA_DA_AYNE`, em
+     `src/content/carta.ts` (padrão: `ayne`). É essa conta que recebe a carta
+     e as mensagens carinhosas, e que herda o castelo feito antes das contas.
+2. Nos outros aparelhos, é só **Entrar** com o mesmo usuário e senha.
+3. Outras pessoas criam as próprias contas do mesmo jeito; cada uma tem o
+   próprio castelo.
+
+O indicador no topo mostra uma nuvenzinha com ✓ quando está tudo salvo na
+planilha.
+
+| Indicador           | Significa                                                           |
+| ------------------- | ------------------------------------------------------------------- |
+| ☁️ com ✓            | Salvo no aparelho e na planilha                                     |
+| 🔄 setinhas girando | Enviando as últimas mudanças                                        |
+| ☁️ cinza riscada    | Sem internet — salvo no aparelho, sobe quando voltar                |
+| ⚠️ alerta           | Erro — toque para ver detalhes e "Tentar de novo"                   |
+| 🔑 chave            | A sessão terminou (senha trocada em outro aparelho): entrar de novo |
+
+## Esqueci a senha
+
+1. Abra a planilha, aba **contas**, e ache a linha do usuário (coluna
+   `usuario`).
+2. Na coluna **`redefinirSenha`** dessa linha, escreva uma senha provisória
+   (6 caracteres ou mais).
+3. No jogo, entre com o usuário e essa senha provisória. Ela vira a senha da
+   conta, a célula se apaga sozinha e os outros aparelhos pedem para entrar
+   de novo.
+4. Depois, troque por uma senha nova em **Configurações → Conta e nuvem →
+   Trocar**.
+
+> As senhas nunca ficam na planilha em texto: a coluna `senha` guarda só um
+> código embaralhado (hash), que não dá para desfazer.
+
+## Atualizar para a versão com contas
+
+Se você já tinha publicado a versão com o PIN (1.0), faça isto **antes** de
+fazer o merge da versão nova do jogo:
+
+1. No editor do Apps Script, apague tudo, cole o **novo** [`Code.gs`](Code.gs)
+   e **salve**.
+2. **Implantar → Gerenciar implantações** → lápis (**Editar**) → **Versão:
+   Nova versão** → **Implantar**. A URL continua a mesma; não precisa mexer no
+   GitHub.
+3. (Opcional) Rode `setup()` de novo; ele só cria a aba nova `contas`. O
+   script também a cria sozinho no primeiro cadastro.
+4. A propriedade `PIN` continua; agora ela é o **código de convite**.
+5. Faça o merge da versão nova do jogo. Nos aparelhos, aparece a tela de
+   entrar: a Ayne cria a conta com o usuário `ayne` e recebe o castelo que já
+   estava na planilha e no aparelho.
+
+Se fizer o merge antes de atualizar o script, a tela de entrar avisa: "A
+planilha está com a versão antiga do script". É só fazer os passos acima.
+
+------------------- | ---------------------------------------------------- |
+| ☁️ com ✓ | Salvo no aparelho e na planilha |
+| 🔄 setinhas girando | Enviando as últimas mudanças |
+| ☁️ cinza riscada | Sem internet — salvo no aparelho, sobe quando voltar |
+| ⚠️ alerta | Erro — toque para ver detalhes e "Tentar de novo" |
+| 🔑 chave | Falta digitar (ou o PIN mudou) |
 
 ---
 
@@ -141,6 +203,7 @@ secret `VITE_SHEETS_API_URL`.)
 | `profile` | profileId · estrelinhas · desbloqueios · missoes · conquistas · configuracoes · updatedAt · revision |
 | `album`   | profileId · photoId · roomId · createdAt · thumbnail · chunkIndex · chunkTotal                       |
 | `log`     | timestamp · acao · deviceId · resultado · erro                                                       |
+| `contas`  | accountId · usuario · nome · sal · senha (hash) · criadaEm · versaoSessao · redefinirSenha           |
 
 - Cada cômodo é JSON compactado (lz-string → base64). Se passar de 45 mil
   caracteres, vira várias linhas (`chunkIndex`/`chunkTotal`) e é remontado na
@@ -151,22 +214,29 @@ secret `VITE_SHEETS_API_URL`.)
   anteriores**).
 - A aba `log` guarda as gravações e erros (no máximo ~2.000 linhas; as mais
   antigas são apagadas sozinhas).
-- **Não edite as abas à mão** enquanto o jogo estiver aberto. Para "zerar" o
-  castelo, apague as linhas de dados (mantenha o cabeçalho) nas abas `saves`,
+- `profileId` é o `accountId` da conta dona dos dados (a conta da Ayne usa
+  `ayne`, o mesmo id do castelo de antes das contas).
+- Na aba `contas`, só a coluna `redefinirSenha` é para mexer à mão (veja
+  [Esqueci a senha](#esqueci-a-senha)). Para apagar uma conta, apague a linha
+  dela em `contas` e as linhas com o `accountId` dela nas outras abas.
+- **Não edite as abas à mão** enquanto o jogo estiver aberto. Para "zerar" um
+  castelo, apague as linhas com o `profileId` da conta nas abas `saves`,
   `profile` e `album`.
 
 ## Problemas comuns
 
-| Sintoma                            | O que fazer                                                 |
-| ---------------------------------- | ----------------------------------------------------------- |
-| "A planilha não respondeu em JSON" | A URL está errada ou a implantação não é "Qualquer pessoa". |
-| "O código ainda não foi definido…" | Falta a propriedade `PIN` (passo 4).                        |
-| "Muitas tentativas"                | Espere 15 min (ou o tempo indicado).                        |
-| Nuvem sempre cinza                 | Sem internet, ou a URL no secret está vazia.                |
-| Mudou o `Code.gs` e nada mudou     | Faltou "Editar implantação → Nova versão" (seção acima).    |
+| Sintoma                            | O que fazer                                                    |
+| ---------------------------------- | -------------------------------------------------------------- |
+| "A planilha não respondeu em JSON" | A URL está errada ou a implantação não é "Qualquer pessoa".    |
+| "O código de convite ainda não…"   | Falta a propriedade `PIN` (passo 4).                           |
+| "Versão antiga do script"          | Cole o `Code.gs` novo e publique uma Nova versão.              |
+| "Usuário ou senha incorretos"      | Confira o usuário; ou use [Esqueci a senha](#esqueci-a-senha). |
+| "Muitas tentativas"                | Espere 15 min (ou o tempo indicado).                           |
+| Nuvem sempre cinza                 | Sem internet, ou a URL no secret está vazia.                   |
+| Mudou o `Code.gs` e nada mudou     | Faltou "Editar implantação → Nova versão" (seção acima).       |
 
 ## Testes
 
 O `Code.gs` é testado de verdade no Node (`apps-script/test/`), com uma
-planilha simulada em memória: PIN, bloqueios, conflitos, pedaços, lote,
-validações e log. Rode `npm test`.
+planilha simulada em memória: contas, senhas, sessões, isolamento entre
+contas, convite, bloqueios, conflitos, pedaços, lote, validações e log. Rode `npm test`.

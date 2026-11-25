@@ -3,7 +3,7 @@ import type { SyncSnapshot, SyncStatus } from '../persistence/sync-engine';
 import { h, icon } from './dom';
 import { relativeTime } from './format';
 import type { IconName } from './icons';
-import { openPinDialog } from './pin-dialog';
+import { signOut } from './account';
 import { openSheet } from './sheet';
 
 const LOOK: Record<
@@ -30,19 +30,22 @@ const LOOK: Record<
     label: 'Erro ao sincronizar',
     text: 'Não consegui falar com a planilha. Está tudo salvo neste aparelho; vou tentar de novo.',
   },
-  'needs-pin': {
+  'needs-login': {
     icon: 'key',
-    label: 'Código do castelo',
-    text: 'Preciso do código do castelo para sincronizar com o outro aparelho.',
+    label: 'Entre de novo',
+    text: 'Sua sessão terminou (a senha pode ter sido trocada em outro aparelho). Está tudo salvo aqui; entre de novo para voltar a sincronizar.',
   },
 };
 
 /** Pílula discreta no topo: nuvem ✓, setinhas girando, nuvem cinza ou alerta. */
-export function createSyncIndicator(cloud: Cloud): { el: HTMLElement; destroy: () => void } {
+export function createSyncIndicator(
+  cloud: Cloud,
+  saveNow: () => Promise<void>,
+): { el: HTMLElement; destroy: () => void } {
   const button = h('button', { class: 'sync-pill', attrs: { type: 'button' } });
   const render = (s: SyncSnapshot) => {
-    // Sem planilha, ou jogando só neste aparelho (sem código): nada a mostrar.
-    if (s.status === 'disabled' || (s.status === 'needs-pin' && !cloud.hasPin)) {
+    // Sem planilha (só neste aparelho): nada a mostrar.
+    if (s.status === 'disabled') {
       button.hidden = true;
       return;
     }
@@ -58,13 +61,13 @@ export function createSyncIndicator(cloud: Cloud): { el: HTMLElement; destroy: (
     button.title = look.label;
   };
   button.addEventListener('click', () => {
-    openSyncDetails(cloud);
+    openSyncDetails(cloud, saveNow);
   });
   const unsubscribe = cloud.engine.subscribe(render);
   return { el: button, destroy: unsubscribe };
 }
 
-export function openSyncDetails(cloud: Cloud): void {
+export function openSyncDetails(cloud: Cloud, saveNow: () => Promise<void>): void {
   openSheet(
     (close) => {
       const body = h('div', { class: 'sync-details' });
@@ -101,7 +104,7 @@ export function openSyncDetails(cloud: Cloud): void {
           h(
             'div',
             { class: 'sheet-actions' },
-            s.status === 'needs-pin' || !cloud.hasPin
+            s.status === 'needs-login'
               ? h(
                   'button',
                   {
@@ -110,12 +113,12 @@ export function openSyncDetails(cloud: Cloud): void {
                     on: {
                       click: () => {
                         close();
-                        void openPinDialog(cloud, { canSkip: false });
+                        void signOut(cloud, saveNow, { ask: false });
                       },
                     },
                   },
                   icon('key'),
-                  'Digitar o código',
+                  'Entrar de novo',
                 )
               : h(
                   'button',

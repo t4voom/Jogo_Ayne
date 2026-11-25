@@ -5,11 +5,11 @@ import { roomInfo } from '../../core/rooms';
 import { parseRoom, serializeRoom } from '../../core/save';
 import type { BackupRecord } from '../../persistence/local-repository';
 import { composeRoomSvg } from '../../render/compose';
+import { openChangePassword, signOut } from '../account';
 import type { GameContext } from '../context';
 import { h, icon, iconButton } from '../dom';
 import { dateTime } from '../format';
 import type { IconName } from '../icons';
-import { openPinDialog } from '../pin-dialog';
 import type { Screen } from '../router';
 import { confirmSheet } from '../sheet';
 import { createSyncIndicator } from '../sync-indicator';
@@ -96,14 +96,29 @@ export async function createSettingsScreen(ctx: GameContext): Promise<Screen> {
       );
       return;
     }
-    const indicator = createSyncIndicator(cloud);
+    const indicator = createSyncIndicator(cloud, ctx.saveNow);
     cleanups.push(indicator.destroy);
     cloudBox.replaceChildren(
       h(
         'div',
         { class: 'set-row' },
-        h('span', { class: 'set-text' }, h('strong', { text: 'Status' })),
-        indicator.el,
+        h('span', { class: 'set-icon' }, icon('user')),
+        h(
+          'span',
+          { class: 'set-text' },
+          h('strong', { text: cloud.session?.nome ?? 'Conta' }),
+          h('small', { text: 'Conta deste castelo' }),
+        ),
+        h('button', {
+          class: 'btn btn-secondary set-btn',
+          text: 'Sair',
+          attrs: { type: 'button', 'aria-label': 'Sair da conta' },
+          on: {
+            click: () => {
+              void signOut(cloud, ctx.saveNow);
+            },
+          },
+        }),
       ),
       h(
         'div',
@@ -112,19 +127,25 @@ export async function createSettingsScreen(ctx: GameContext): Promise<Screen> {
         h(
           'span',
           { class: 'set-text' },
-          h('strong', { text: 'Código do castelo' }),
-          h('small', { text: cloud.hasPin ? 'Definido neste aparelho' : 'Ainda não digitado' }),
+          h('strong', { text: 'Senha' }),
+          h('small', { text: 'Troque quando quiser' }),
         ),
         h('button', {
           class: 'btn btn-secondary set-btn',
-          text: cloud.hasPin ? 'Trocar' : 'Digitar',
-          attrs: { type: 'button' },
+          text: 'Trocar',
+          attrs: { type: 'button', 'aria-label': 'Trocar senha' },
           on: {
             click: () => {
-              void openPinDialog(cloud, { canSkip: false }).then(renderCloud);
+              openChangePassword(cloud, ctx.toast);
             },
           },
         }),
+      ),
+      h(
+        'div',
+        { class: 'set-row' },
+        h('span', { class: 'set-text' }, h('strong', { text: 'Sincronização' })),
+        indicator.el,
       ),
       h(
         'button',
@@ -252,7 +273,7 @@ export async function createSettingsScreen(ctx: GameContext): Promise<Screen> {
       'div',
       { class: 'set-scroll' },
       section('Sons e toque', h('div', { class: 'set-card' }, ...toggleRows.map((t) => t.row))),
-      section('Castelo na nuvem', cloudBox),
+      section('Conta e nuvem', cloudBox),
       section('Versões anteriores', backupsBox),
       section(
         'Créditos',

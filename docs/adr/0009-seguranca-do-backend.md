@@ -1,6 +1,6 @@
 # 0009 — Segurança do backend: PIN em Script Properties com limite de tentativas
 
-- **Status:** Aceito
+- **Status:** Substituído por 0014 (o PIN virou o código de convite; o limite de tentativas continua)
 - **Data:** 2026-11-24
 
 ## Contexto
